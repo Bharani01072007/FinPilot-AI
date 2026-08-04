@@ -42,6 +42,14 @@ class Settings(BaseSettings):
     POSTGRES_DB: str = "finpilot_db"
     DATABASE_URL: Union[str, None] = None
 
+    # SMTP Email Settings for 2FA Dispatch
+    SMTP_HOST: str = "smtp.gmail.com"
+    SMTP_PORT: int = 587
+    SMTP_USER: str = ""
+    SMTP_PASSWORD: str = ""
+    EMAILS_FROM_NAME: str = "FinPilot Security"
+    EMAILS_FROM_EMAIL: str = "noreply@finpilot.ai"
+
     # CORS Settings
     CORS_ORIGINS: List[str] = [
         "http://localhost:8080",

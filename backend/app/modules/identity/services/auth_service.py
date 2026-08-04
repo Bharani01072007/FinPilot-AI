@@ -43,6 +43,9 @@ from app.modules.identity.security import (
 _ACTIVE_2FA_STORE: Dict[str, Dict[str, Any]] = {}
 
 
+from app.core.email import dispatch_2fa_email
+
+
 class AuthService:
     """Enterprise security service encapsulating user authentication, real-time 2FA OTP engine, lockout protection, and audit logging."""
 
@@ -101,6 +104,9 @@ class AuthService:
             print(f"\n[REALTIME 2FA DISPATCH] Sent 2FA OTP [{otp_code}] to {email}\n")
         except Exception:
             pass
+
+        # Dispatch SMTP Email Async Task
+        dispatch_2fa_email(email, otp_code)
 
         return otp_code
 
@@ -233,16 +239,10 @@ class AuthService:
 
         # Strict OTP Code Validation
         if not stored_otp_data:
-            # Fallback for dev demo accounts (aarav@finpilot.ai, employee@finpilot.ai, manager@finpilot.ai) if 123456 used
-            if req.otp_code == "123456" and email_clean in ["aarav@finpilot.ai", "employee@finpilot.ai", "manager@finpilot.ai"]:
-                user = self.user_repo.get_by_email(db, email_clean)
-                if user:
-                    stored_otp_data = {"user_id": user.id, "role": email_clean.split("@")[0]}
-            if not stored_otp_data:
-                raise AuthenticationException(message="Invalid or expired 2FA code. Please request a new verification code.")
+            raise AuthenticationException(message="Invalid or expired 2FA session. Please request a new 2FA code.")
 
-        if "code" in stored_otp_data and stored_otp_data["code"] != req.otp_code and req.otp_code != "123456":
-            raise AuthenticationException(message="Incorrect 2FA verification code. Please check your email for the correct 6-digit code.")
+        if stored_otp_data.get("code") != req.otp_code:
+            raise AuthenticationException(message="Incorrect 2FA verification code. Please check your email for the correct 6-digit OTP.")
 
         now = datetime.now(timezone.utc)
         if "expires_at" in stored_otp_data and stored_otp_data["expires_at"] < now:
@@ -330,9 +330,9 @@ class AuthService:
         device: Optional[str] = None,
         ip_address: Optional[str] = None,
     ) -> TokenResponse:
-        """Direct login fallback issuing JWT tokens directly."""
-        otp_info = self.request_login_otp(db, req, device, ip_address)
-        verify_req = Verify2FARequest(email=req.email, otp_code=_ACTIVE_2FA_STORE.get(req.email.lower(), {}).get("code", "123456"))
+        self.request_login_otp(db, req, device, ip_address)
+        code = _ACTIVE_2FA_STORE.get(req.email.lower(), {}).get("code", "")
+        verify_req = Verify2FARequest(email=req.email, otp_code=code)
         return self.verify_2fa_and_mint_session(db, verify_req, device, ip_address)
 
     def refresh_token(
