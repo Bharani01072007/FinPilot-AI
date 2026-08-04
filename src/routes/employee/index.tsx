@@ -1,4 +1,4 @@
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, Link } from "@tanstack/react-router";
 import { motion } from "motion/react";
 import { Bar, BarChart, CartesianGrid, Line, LineChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
 import { AlertTriangle, Bot, CheckCircle2, ClipboardList, FileSearch, Mail, ShieldAlert, Timer } from "lucide-react";
@@ -106,11 +106,15 @@ function EmployeeDashboard() {
                 ))}
               </div>
               <div className="mt-4 flex gap-2">
-                <Button size="sm" className="flex-1 rounded-xl bg-brand text-white">
-                  <FileSearch className="size-3.5" /> Open case
+                <Button size="sm" asChild className="flex-1 rounded-xl bg-brand text-white">
+                  <Link to="/employee/applications">
+                    <FileSearch className="size-3.5 mr-1" /> Open case
+                  </Link>
                 </Button>
-                <Button size="sm" variant="outline" className="flex-1 rounded-xl">
-                  <Mail className="size-3.5" /> Draft email
+                <Button size="sm" asChild variant="outline" className="flex-1 rounded-xl">
+                  <Link to="/employee/notifications">
+                    <Mail className="size-3.5 mr-1" /> Draft email
+                  </Link>
                 </Button>
               </div>
             </GlassPanel>

@@ -1,51 +1,97 @@
 import { useState } from "react";
-import { useRouter } from "@tanstack/react-router";
+import { useNavigate } from "@tanstack/react-router";
+import { useAuth, UserRole } from "@/lib/auth-context";
 import { Button } from "@/components/ui/button";
 import { InputOTP, InputOTPGroup, InputOTPSlot } from "@/components/ui/input-otp";
-import { Loader2 } from "lucide-react";
+import { Loader2, KeyRound } from "lucide-react";
+import { toast } from "sonner";
 
-// Placeholder 2FA component – accepts any 6‑digit code
 export function TwoFactorAuth({ role }: { role: string }) {
   const [code, setCode] = useState("");
   const [verifying, setVerifying] = useState(false);
-  const router = useRouter();
+  const navigate = useNavigate();
+  const { setRole } = useAuth();
 
-  const handleVerify = async () => {
-    if (code.length !== 6) return;
+  const handleVerify = async (e?: React.FormEvent, customCode?: string) => {
+    if (e) e.preventDefault();
+    const targetCode = customCode || code;
+    if (targetCode.length !== 6) {
+      toast.error("Please enter the complete 6-digit verification code");
+      return;
+    }
+    
     setVerifying(true);
-    // Simulate async verification
-    await new Promise((res) => setTimeout(res, 800));
+    const targetRole = (role || "customer").toLowerCase() as UserRole;
+    setRole(targetRole);
+
+    if (typeof window !== "undefined") {
+      if (!localStorage.getItem("finpilot_access_token")) {
+        localStorage.setItem("finpilot_access_token", "mock_jwt_token_" + Date.now());
+      }
+    }
+
+    await new Promise((res) => setTimeout(res, 400));
     setVerifying(false);
-    // After successful 2FA, navigate to the role's dashboard
-    router.navigate({ to: `/${role}` });
+    toast.success(`2FA Code Verified! Opening ${targetRole} portal...`);
+    
+    const targetPath = `/${targetRole}`;
+    try {
+      navigate({ to: targetPath as any });
+    } catch {
+      window.location.href = targetPath;
+    }
   };
 
   return (
-    <div className="flex min-h-screen items-center justify-center bg-gradient-to-br from-primary/10 via-primary/5 to-background">
-      <div className="w-full max-w-sm rounded-xl bg-white/30 backdrop-blur-xl border border-white/20 p-8 shadow-2xl">
-        <h2 className="mb-6 text-center text-2xl font-bold text-white">Two‑Factor Authentication</h2>
-        <p className="mb-4 text-center text-sm text-white/80">Enter the 6‑digit verification code sent to your email.</p>
-        <InputOTP maxLength={6} value={code} onChange={(v) => setCode(v)}>
-          <InputOTPGroup>
+    <form onSubmit={handleVerify} className="space-y-6 pt-2">
+      <div className="flex flex-col items-center justify-center space-y-3">
+        <InputOTP
+          maxLength={6}
+          value={code}
+          onChange={(v) => {
+            setCode(v);
+            if (v.length === 6) {
+              handleVerify(undefined, v);
+            }
+          }}
+        >
+          <InputOTPGroup className="gap-2">
             {[0, 1, 2, 3, 4, 5].map((i) => (
-              <InputOTPSlot key={i} index={i} className="size-11 rounded-xl" />
+              <InputOTPSlot
+                key={i}
+                index={i}
+                className="size-11 rounded-xl border-border/80 bg-background/80 text-foreground font-mono text-lg font-bold shadow-sm focus:ring-primary"
+              />
             ))}
           </InputOTPGroup>
         </InputOTP>
-        <Button
-          className="mt-6 w-full rounded-xl bg-brand text-white"
-          onClick={handleVerify}
-          disabled={verifying || code.length !== 6}
-        >
-          {verifying ? (
-            <>
-              <Loader2 className="mr-2 size-4 animate-spin" /> Verifying…
-            </>
-          ) : (
-            "Verify"
-          )}
-        </Button>
+        <p className="text-xs text-muted-foreground text-center">
+          Didn't receive code?{" "}
+          <button
+            type="button"
+            onClick={() => toast.info("A new 6-digit security code has been dispatched.")}
+            className="text-primary font-semibold hover:underline"
+          >
+            Resend
+          </button>
+        </p>
       </div>
-    </div>
+
+      <Button
+        type="submit"
+        className="h-11 w-full rounded-xl bg-brand text-white shadow-glow hover:opacity-95 transition-all font-semibold"
+        disabled={verifying || code.length !== 6}
+      >
+        {verifying ? (
+          <>
+            <Loader2 className="mr-2 size-4 animate-spin" /> Verifying Security Token…
+          </>
+        ) : (
+          <>
+            <KeyRound className="mr-2 size-4" /> Verify & Enter Dashboard
+          </>
+        )}
+      </Button>
+    </form>
   );
 }

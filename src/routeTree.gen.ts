@@ -16,12 +16,14 @@ import { Route as ManagerRouteImport } from './routes/manager'
 import { Route as CustomerIndexRouteImport } from './routes/customer/index'
 import { Route as CustomerApplicationsRouteImport } from './routes/customer/applications'
 import { Route as CustomerAssistantRouteImport } from './routes/customer/assistant'
+import { Route as CustomerHelpRouteImport } from './routes/customer/help'
 import { Route as CustomerNotificationsRouteImport } from './routes/customer/notifications'
 import { Route as CustomerSettingsRouteImport } from './routes/customer/settings'
 import { Route as CustomerVaultRouteImport } from './routes/customer/vault'
 import { Route as EmployeeIndexRouteImport } from './routes/employee/index'
 import { Route as EmployeeAiToolsRouteImport } from './routes/employee/ai-tools'
 import { Route as EmployeeApplicationsRouteImport } from './routes/employee/applications'
+import { Route as EmployeeAssistantRouteImport } from './routes/employee/assistant'
 import { Route as EmployeeCustomersRouteImport } from './routes/employee/customers'
 import { Route as EmployeeDocumentsRouteImport } from './routes/employee/documents'
 import { Route as EmployeeKycRouteImport } from './routes/employee/kyc'
@@ -36,6 +38,7 @@ import { Route as ManagerIndexRouteImport } from './routes/manager/index'
 import { Route as ManagerAiToolsRouteImport } from './routes/manager/ai-tools'
 import { Route as ManagerAnalyticsRouteImport } from './routes/manager/analytics'
 import { Route as ManagerApprovalsRouteImport } from './routes/manager/approvals'
+import { Route as ManagerAssistantRouteImport } from './routes/manager/assistant'
 import { Route as ManagerAuditLogsRouteImport } from './routes/manager/audit-logs'
 import { Route as ManagerCustomersRouteImport } from './routes/manager/customers'
 import { Route as ManagerRiskRouteImport } from './routes/manager/risk'
@@ -77,6 +80,11 @@ const CustomerAssistantRoute = CustomerAssistantRouteImport.update({
   path: '/assistant',
   getParentRoute: () => CustomerRoute,
 } as any)
+const CustomerHelpRoute = CustomerHelpRouteImport.update({
+  id: '/help',
+  path: '/help',
+  getParentRoute: () => CustomerRoute,
+} as any)
 const CustomerNotificationsRoute = CustomerNotificationsRouteImport.update({
   id: '/notifications',
   path: '/notifications',
@@ -105,6 +113,11 @@ const EmployeeAiToolsRoute = EmployeeAiToolsRouteImport.update({
 const EmployeeApplicationsRoute = EmployeeApplicationsRouteImport.update({
   id: '/applications',
   path: '/applications',
+  getParentRoute: () => EmployeeRoute,
+} as any)
+const EmployeeAssistantRoute = EmployeeAssistantRouteImport.update({
+  id: '/assistant',
+  path: '/assistant',
   getParentRoute: () => EmployeeRoute,
 } as any)
 const EmployeeCustomersRoute = EmployeeCustomersRouteImport.update({
@@ -177,6 +190,11 @@ const ManagerApprovalsRoute = ManagerApprovalsRouteImport.update({
   path: '/approvals',
   getParentRoute: () => ManagerRoute,
 } as any)
+const ManagerAssistantRoute = ManagerAssistantRouteImport.update({
+  id: '/assistant',
+  path: '/assistant',
+  getParentRoute: () => ManagerRoute,
+} as any)
 const ManagerAuditLogsRoute = ManagerAuditLogsRouteImport.update({
   id: '/audit-logs',
   path: '/audit-logs',
@@ -210,11 +228,13 @@ export interface FileRoutesByFullPath {
   '/manager': typeof ManagerRouteWithChildren
   '/customer/applications': typeof CustomerApplicationsRoute
   '/customer/assistant': typeof CustomerAssistantRoute
+  '/customer/help': typeof CustomerHelpRoute
   '/customer/notifications': typeof CustomerNotificationsRoute
   '/customer/settings': typeof CustomerSettingsRoute
   '/customer/vault': typeof CustomerVaultRoute
   '/employee/ai-tools': typeof EmployeeAiToolsRoute
   '/employee/applications': typeof EmployeeApplicationsRoute
+  '/employee/assistant': typeof EmployeeAssistantRoute
   '/employee/customers': typeof EmployeeCustomersRoute
   '/employee/documents': typeof EmployeeDocumentsRoute
   '/employee/kyc': typeof EmployeeKycRoute
@@ -228,6 +248,7 @@ export interface FileRoutesByFullPath {
   '/manager/ai-tools': typeof ManagerAiToolsRoute
   '/manager/analytics': typeof ManagerAnalyticsRoute
   '/manager/approvals': typeof ManagerApprovalsRoute
+  '/manager/assistant': typeof ManagerAssistantRoute
   '/manager/audit-logs': typeof ManagerAuditLogsRoute
   '/manager/customers': typeof ManagerCustomersRoute
   '/manager/risk': typeof ManagerRiskRoute
@@ -241,11 +262,13 @@ export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/customer/applications': typeof CustomerApplicationsRoute
   '/customer/assistant': typeof CustomerAssistantRoute
+  '/customer/help': typeof CustomerHelpRoute
   '/customer/notifications': typeof CustomerNotificationsRoute
   '/customer/settings': typeof CustomerSettingsRoute
   '/customer/vault': typeof CustomerVaultRoute
   '/employee/ai-tools': typeof EmployeeAiToolsRoute
   '/employee/applications': typeof EmployeeApplicationsRoute
+  '/employee/assistant': typeof EmployeeAssistantRoute
   '/employee/customers': typeof EmployeeCustomersRoute
   '/employee/documents': typeof EmployeeDocumentsRoute
   '/employee/kyc': typeof EmployeeKycRoute
@@ -259,6 +282,7 @@ export interface FileRoutesByTo {
   '/manager/ai-tools': typeof ManagerAiToolsRoute
   '/manager/analytics': typeof ManagerAnalyticsRoute
   '/manager/approvals': typeof ManagerApprovalsRoute
+  '/manager/assistant': typeof ManagerAssistantRoute
   '/manager/audit-logs': typeof ManagerAuditLogsRoute
   '/manager/customers': typeof ManagerCustomersRoute
   '/manager/risk': typeof ManagerRiskRoute
@@ -276,11 +300,13 @@ export interface FileRoutesById {
   '/manager': typeof ManagerRouteWithChildren
   '/customer/applications': typeof CustomerApplicationsRoute
   '/customer/assistant': typeof CustomerAssistantRoute
+  '/customer/help': typeof CustomerHelpRoute
   '/customer/notifications': typeof CustomerNotificationsRoute
   '/customer/settings': typeof CustomerSettingsRoute
   '/customer/vault': typeof CustomerVaultRoute
   '/employee/ai-tools': typeof EmployeeAiToolsRoute
   '/employee/applications': typeof EmployeeApplicationsRoute
+  '/employee/assistant': typeof EmployeeAssistantRoute
   '/employee/customers': typeof EmployeeCustomersRoute
   '/employee/documents': typeof EmployeeDocumentsRoute
   '/employee/kyc': typeof EmployeeKycRoute
@@ -294,6 +320,7 @@ export interface FileRoutesById {
   '/manager/ai-tools': typeof ManagerAiToolsRoute
   '/manager/analytics': typeof ManagerAnalyticsRoute
   '/manager/approvals': typeof ManagerApprovalsRoute
+  '/manager/assistant': typeof ManagerAssistantRoute
   '/manager/audit-logs': typeof ManagerAuditLogsRoute
   '/manager/customers': typeof ManagerCustomersRoute
   '/manager/risk': typeof ManagerRiskRoute
@@ -312,11 +339,13 @@ export interface FileRouteTypes {
     | '/manager'
     | '/customer/applications'
     | '/customer/assistant'
+    | '/customer/help'
     | '/customer/notifications'
     | '/customer/settings'
     | '/customer/vault'
     | '/employee/ai-tools'
     | '/employee/applications'
+    | '/employee/assistant'
     | '/employee/customers'
     | '/employee/documents'
     | '/employee/kyc'
@@ -330,6 +359,7 @@ export interface FileRouteTypes {
     | '/manager/ai-tools'
     | '/manager/analytics'
     | '/manager/approvals'
+    | '/manager/assistant'
     | '/manager/audit-logs'
     | '/manager/customers'
     | '/manager/risk'
@@ -343,11 +373,13 @@ export interface FileRouteTypes {
     | '/'
     | '/customer/applications'
     | '/customer/assistant'
+    | '/customer/help'
     | '/customer/notifications'
     | '/customer/settings'
     | '/customer/vault'
     | '/employee/ai-tools'
     | '/employee/applications'
+    | '/employee/assistant'
     | '/employee/customers'
     | '/employee/documents'
     | '/employee/kyc'
@@ -361,6 +393,7 @@ export interface FileRouteTypes {
     | '/manager/ai-tools'
     | '/manager/analytics'
     | '/manager/approvals'
+    | '/manager/assistant'
     | '/manager/audit-logs'
     | '/manager/customers'
     | '/manager/risk'
@@ -377,11 +410,13 @@ export interface FileRouteTypes {
     | '/manager'
     | '/customer/applications'
     | '/customer/assistant'
+    | '/customer/help'
     | '/customer/notifications'
     | '/customer/settings'
     | '/customer/vault'
     | '/employee/ai-tools'
     | '/employee/applications'
+    | '/employee/assistant'
     | '/employee/customers'
     | '/employee/documents'
     | '/employee/kyc'
@@ -395,6 +430,7 @@ export interface FileRouteTypes {
     | '/manager/ai-tools'
     | '/manager/analytics'
     | '/manager/approvals'
+    | '/manager/assistant'
     | '/manager/audit-logs'
     | '/manager/customers'
     | '/manager/risk'
@@ -468,6 +504,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof CustomerAssistantRouteImport
       parentRoute: typeof CustomerRoute
     }
+    '/customer/help': {
+      id: '/customer/help'
+      path: '/help'
+      fullPath: '/customer/help'
+      preLoaderRoute: typeof CustomerHelpRouteImport
+      parentRoute: typeof CustomerRoute
+    }
     '/customer/notifications': {
       id: '/customer/notifications'
       path: '/notifications'
@@ -508,6 +551,13 @@ declare module '@tanstack/react-router' {
       path: '/applications'
       fullPath: '/employee/applications'
       preLoaderRoute: typeof EmployeeApplicationsRouteImport
+      parentRoute: typeof EmployeeRoute
+    }
+    '/employee/assistant': {
+      id: '/employee/assistant'
+      path: '/assistant'
+      fullPath: '/employee/assistant'
+      preLoaderRoute: typeof EmployeeAssistantRouteImport
       parentRoute: typeof EmployeeRoute
     }
     '/employee/customers': {
@@ -608,6 +658,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ManagerApprovalsRouteImport
       parentRoute: typeof ManagerRoute
     }
+    '/manager/assistant': {
+      id: '/manager/assistant'
+      path: '/assistant'
+      fullPath: '/manager/assistant'
+      preLoaderRoute: typeof ManagerAssistantRouteImport
+      parentRoute: typeof ManagerRoute
+    }
     '/manager/audit-logs': {
       id: '/manager/audit-logs'
       path: '/audit-logs'
@@ -649,6 +706,7 @@ declare module '@tanstack/react-router' {
 interface CustomerRouteChildren {
   CustomerApplicationsRoute: typeof CustomerApplicationsRoute
   CustomerAssistantRoute: typeof CustomerAssistantRoute
+  CustomerHelpRoute: typeof CustomerHelpRoute
   CustomerNotificationsRoute: typeof CustomerNotificationsRoute
   CustomerSettingsRoute: typeof CustomerSettingsRoute
   CustomerVaultRoute: typeof CustomerVaultRoute
@@ -658,6 +716,7 @@ interface CustomerRouteChildren {
 const CustomerRouteChildren: CustomerRouteChildren = {
   CustomerApplicationsRoute: CustomerApplicationsRoute,
   CustomerAssistantRoute: CustomerAssistantRoute,
+  CustomerHelpRoute: CustomerHelpRoute,
   CustomerNotificationsRoute: CustomerNotificationsRoute,
   CustomerSettingsRoute: CustomerSettingsRoute,
   CustomerVaultRoute: CustomerVaultRoute,
@@ -671,6 +730,7 @@ const CustomerRouteWithChildren = CustomerRoute._addFileChildren(
 interface EmployeeRouteChildren {
   EmployeeAiToolsRoute: typeof EmployeeAiToolsRoute
   EmployeeApplicationsRoute: typeof EmployeeApplicationsRoute
+  EmployeeAssistantRoute: typeof EmployeeAssistantRoute
   EmployeeCustomersRoute: typeof EmployeeCustomersRoute
   EmployeeDocumentsRoute: typeof EmployeeDocumentsRoute
   EmployeeKycRoute: typeof EmployeeKycRoute
@@ -682,6 +742,7 @@ interface EmployeeRouteChildren {
 const EmployeeRouteChildren: EmployeeRouteChildren = {
   EmployeeAiToolsRoute: EmployeeAiToolsRoute,
   EmployeeApplicationsRoute: EmployeeApplicationsRoute,
+  EmployeeAssistantRoute: EmployeeAssistantRoute,
   EmployeeCustomersRoute: EmployeeCustomersRoute,
   EmployeeDocumentsRoute: EmployeeDocumentsRoute,
   EmployeeKycRoute: EmployeeKycRoute,
@@ -698,6 +759,7 @@ interface ManagerRouteChildren {
   ManagerAiToolsRoute: typeof ManagerAiToolsRoute
   ManagerAnalyticsRoute: typeof ManagerAnalyticsRoute
   ManagerApprovalsRoute: typeof ManagerApprovalsRoute
+  ManagerAssistantRoute: typeof ManagerAssistantRoute
   ManagerAuditLogsRoute: typeof ManagerAuditLogsRoute
   ManagerCustomersRoute: typeof ManagerCustomersRoute
   ManagerRiskRoute: typeof ManagerRiskRoute
@@ -710,6 +772,7 @@ const ManagerRouteChildren: ManagerRouteChildren = {
   ManagerAiToolsRoute: ManagerAiToolsRoute,
   ManagerAnalyticsRoute: ManagerAnalyticsRoute,
   ManagerApprovalsRoute: ManagerApprovalsRoute,
+  ManagerAssistantRoute: ManagerAssistantRoute,
   ManagerAuditLogsRoute: ManagerAuditLogsRoute,
   ManagerCustomersRoute: ManagerCustomersRoute,
   ManagerRiskRoute: ManagerRiskRoute,

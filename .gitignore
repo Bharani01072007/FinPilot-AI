@@ -4,9 +4,9 @@ logs
 npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
-pnpm-debug.log*
 lerna-debug.log*
 
+# Dependencies & Builds
 node_modules
 dist
 dist-ssr
@@ -16,9 +16,17 @@ dist-ssr
 .nitro
 *.local
 
-# Wrangler / Cloudflare
-.wrangler/
-.dev.vars
+# Environment Variables & Keys
+.env
+.env.*
+!.env.example
+backend/.env
+backend/.env.*
+
+# Uploads & Temporary Cache
+backend/app/storage/uploads/documents/*
+!.gitkeep
+.pytest_cache
 
 # Editor directories and files
 .vscode/*

@@ -20,8 +20,25 @@ import {
 } from "lucide-react";
 import { PortalShell } from "@/components/portal-shell";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { toast } from "sonner";
+
+interface Customer {
+  id: string;
+  name: string;
+  email: string;
+  phone: string;
+  company: string;
+  tier: string;
+  kyc_status: string;
+  risk_level: string;
+  active_applications_count: number;
+  total_borrowed: string;
+  joined_date: string;
+  last_activity: string;
+  documents_count: number;
+}
 
 export const Route = createFileRoute("/manager/customers")({
   component: CustomerManagementPage,
@@ -29,7 +46,7 @@ export const Route = createFileRoute("/manager/customers")({
 
 function CustomerManagementPage() {
   // Reuse employee customer data and UI logic
-  const [customers, setCustomers] = useState([
+  const [customers, setCustomers] = useState<Customer[]>([
     // Sample data – you can replace with real API calls
     {
       id: "CUST-8021",
@@ -51,7 +68,7 @@ function CustomerManagementPage() {
   const [searchQuery, setSearchQuery] = useState("");
   const [tierFilter, setTierFilter] = useState("ALL");
   const [kycFilter, setKycFilter] = useState("ALL");
-  const [selectedCustomer, setSelectedCustomer] = useState(null);
+  const [selectedCustomer, setSelectedCustomer] = useState<Customer | null>(null);
 
   const filteredCustomers = useMemo(() => {
     return customers.filter((c) => {

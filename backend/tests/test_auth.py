@@ -69,7 +69,7 @@ def test_12_char_password_policy_rejection(client):
         "password": "Secure123!",  # Only 10 characters -> Should fail
     }
     response = client.post("/api/v1/auth/register", json=payload)
-    assert response.status_code == status.HTTP_422_UNPROCESSABLE_ENTITY
+    assert response.status_code in (status.HTTP_422_UNPROCESSABLE_ENTITY, 422)
 
 
 def test_user_registration_and_jwt_claims(client):

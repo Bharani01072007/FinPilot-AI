@@ -1,34 +1,56 @@
-import { createFileRoute, useSearch } from "@tanstack/react-router";
+import { createFileRoute, useSearch, Link } from "@tanstack/react-router";
 import { TwoFactorAuth } from "@/components/TwoFactorAuth";
 import { motion } from "motion/react";
-import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
+import { Card, CardHeader, CardTitle, CardDescription, CardContent } from "@/components/ui/card";
+import { AuroraBackground } from "@/components/aurora-background";
+import { ShieldCheck, ArrowLeft } from "lucide-react";
 
-// Route for Two‑Factor Authentication after password login
 export const Route = createFileRoute("/login/2fa")({
+  validateSearch: (search: Record<string, unknown>) => ({
+    role: (search.role as string) || "customer",
+  }),
   component: TwoFAPage,
 });
 
 function TwoFAPage() {
-  // Read the role from the query string (e.g., ?role=manager)
   const search = useSearch({ from: "/login/2fa" });
-  const role = typeof search.role === "string" ? search.role : "";
+  const role = typeof search.role === "string" ? search.role : "customer";
 
   return (
-    <motion.div
-      className="flex min-h-screen items-center justify-center bg-gradient-to-br from-primary/10 via-primary/5 to-background"
-      initial={{ opacity: 0, y: -10 }}
-      animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.5 }}
-    >
-      <Card className="w-full max-w-sm md:max-w-md backdrop-blur-xl bg-white/30 border border-white/20 rounded-xl p-8 shadow-2xl">
-        <CardHeader>
-          <CardTitle className="text-center text-2xl font-bold text-white">Two‑Factor Auth</CardTitle>
-        </CardHeader>
-        <CardContent className="pt-4">
-          {/* Pass the extracted role to the component */}
-          <TwoFactorAuth role={role} />
-        </CardContent>
-      </Card>
-    </motion.div>
+    <div className="relative flex min-h-screen items-center justify-center p-4">
+      <AuroraBackground dense />
+
+      <motion.div
+        initial={{ opacity: 0, scale: 0.96 }}
+        animate={{ opacity: 1, scale: 1 }}
+        transition={{ duration: 0.4 }}
+        className="w-full max-w-md"
+      >
+        <Card className="glass-strong border border-border/80 rounded-3xl p-6 shadow-float">
+          <CardHeader className="text-center space-y-2 pb-2">
+            <div className="mx-auto grid size-12 place-items-center rounded-2xl bg-primary/10 border border-primary/20 text-primary mb-1">
+              <ShieldCheck className="size-6 text-primary" />
+            </div>
+            <CardTitle className="text-2xl font-bold font-display text-foreground">
+              Two‑Factor Authentication
+            </CardTitle>
+            <CardDescription className="text-xs text-muted-foreground">
+              Enter the 6-digit security code for your <span className="capitalize font-semibold text-foreground">{role}</span> session
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="pt-2">
+            <TwoFactorAuth role={role} />
+            <div className="mt-6 text-center">
+              <Link
+                to="/login/role-select"
+                className="inline-flex items-center gap-1.5 text-xs text-muted-foreground hover:text-foreground transition-colors font-medium"
+              >
+                <ArrowLeft className="size-3.5" /> Back to portal selection
+              </Link>
+            </div>
+          </CardContent>
+        </Card>
+      </motion.div>
+    </div>
   );
 }

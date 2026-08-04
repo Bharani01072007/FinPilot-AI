@@ -19,6 +19,7 @@ import {
   Sparkles,
   Vault,
   Wallet,
+  Zap,
 } from "lucide-react";
 import { PortalShell } from "@/components/portal-shell";
 import { GlassPanel, MetricCard, ProgressRing, SectionTitle, StatusPill, riseIn, stagger } from "@/components/kit";
@@ -34,13 +35,6 @@ export const Route = createFileRoute("/customer/")({
         content:
           "Track applications, document readiness and AI recommendations in the FinPilot AI customer portal dashboard.",
       },
-      { property: "og:title", content: "Customer Dashboard · FinPilot AI" },
-      {
-        property: "og:description",
-        content: "Applications, document readiness score and AI recommendations for your financial services.",
-      },
-      { property: "og:type", content: "website" },
-      { name: "twitter:card", content: "summary_large_image" },
     ],
   }),
   component: CustomerDashboard,
@@ -59,6 +53,7 @@ function CustomerDashboard() {
   return (
     <PortalShell role="customer" title="Welcome back, Aarav" subtitle="Here's what needs your attention today.">
       <motion.div variants={stagger} initial="hidden" animate="show" className="space-y-6">
+        {/* Metric Cards Row */}
         <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
           <MetricCard label="Active applications" value={3} icon={FileCheck2} delta="+1" delay={0} />
           <MetricCard label="Sanctioned amount" value={68} prefix="₹" suffix="L" icon={Wallet} delta="+12%" delay={0.05} />
@@ -66,6 +61,46 @@ function CustomerDashboard() {
           <MetricCard label="Avg. decision time" value={7.4} suffix=" hrs" icon={Clock} delta="-22%" delay={0.15} />
         </div>
 
+        {/* PROMINENT QUICK ACTIONS IN PRIMARY EYESIGHT */}
+        <GlassPanel className="p-4 glass-strong border-primary/30" delay={0.02}>
+          <div className="flex items-center justify-between border-b border-border/50 pb-2.5 mb-3">
+            <div className="flex items-center gap-2">
+              <span className="grid size-6 place-items-center rounded-lg bg-primary/10 text-primary">
+                <Zap className="size-3.5" />
+              </span>
+              <h3 className="font-display text-sm font-semibold uppercase tracking-wider text-foreground">
+                Quick Actions
+              </h3>
+            </div>
+            <span className="text-xs text-muted-foreground">1-Click Fast Actions</span>
+          </div>
+
+          <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+            {[
+              { icon: FileCheck2, label: "Start Smart Application", to: "/customer/applications?tab=smart-form", desc: "1-Click Vault auto-fill" },
+              { icon: CalendarClock, label: "Book Officer Meeting", to: "/customer/applications?tab=appointments", desc: "Video KYC & Branch" },
+              { icon: Vault, label: "Open Secure Vault", to: "/customer/vault", desc: "Upload & manage docs" },
+              { icon: Bot, label: "Multilingual AI Assistant", to: "/customer/assistant", desc: "Ask 24/7 AI copilot" },
+            ].map((q) => (
+              <Link
+                key={q.label}
+                to={q.to}
+                className="group flex items-center gap-3 rounded-xl border border-border/70 bg-card/60 px-4 py-3 transition-all hover:-translate-y-0.5 hover:border-primary/50 hover:bg-primary/5 hover:shadow-float"
+              >
+                <span className="grid size-10 shrink-0 place-items-center rounded-xl bg-primary/10 text-primary transition-transform group-hover:scale-110">
+                  <q.icon className="size-5" />
+                </span>
+                <div className="min-w-0 flex-1">
+                  <p className="text-sm font-semibold text-foreground group-hover:text-primary transition-colors">{q.label}</p>
+                  <p className="text-[11px] text-muted-foreground truncate">{q.desc}</p>
+                </div>
+                <ArrowRight className="size-4 text-muted-foreground transition-transform group-hover:translate-x-1 group-hover:text-primary" />
+              </Link>
+            ))}
+          </div>
+        </GlassPanel>
+
+        {/* Main Dashboard Grid */}
         <div className="grid gap-4 lg:grid-cols-3">
           <GlassPanel className="p-5 lg:col-span-2" delay={0.05}>
             <SectionTitle
@@ -208,39 +243,6 @@ function CustomerDashboard() {
             </GlassPanel>
           </div>
         </div>
-
-        <GlassPanel className="p-5" delay={0.05}>
-          <SectionTitle title="Quick actions" />
-          <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
-            {[
-              { icon: Vault, label: "Open Vault", to: "/customer/vault" },
-              { icon: Bot, label: "Ask AI Assistant", to: "/customer/assistant" },
-              { icon: CalendarClock, label: "Book appointment" },
-              { icon: FileCheck2, label: "Start new application" },
-            ].map((q) => {
-              const inner = (
-                <>
-                  <span className="grid size-9 place-items-center rounded-xl bg-primary/10 text-primary">
-                    <q.icon className="size-4" />
-                  </span>
-                  <span className="text-sm font-medium">{q.label}</span>
-                  <ArrowRight className="ml-auto size-4 text-muted-foreground" />
-                </>
-              );
-              const cls =
-                "flex items-center gap-3 rounded-xl border border-border/70 bg-card/50 px-4 py-3 transition-all hover:-translate-y-0.5 hover:border-primary/40 hover:shadow-float";
-              return q.to ? (
-                <Link key={q.label} to={q.to} className={cls}>
-                  {inner}
-                </Link>
-              ) : (
-                <button key={q.label} className={cls}>
-                  {inner}
-                </button>
-              );
-            })}
-          </div>
-        </GlassPanel>
       </motion.div>
     </PortalShell>
   );

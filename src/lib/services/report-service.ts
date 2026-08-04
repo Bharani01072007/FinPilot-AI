@@ -42,20 +42,24 @@ export const reportService = {
 
   async exportReport(reportType = "dashboard") {
     const token = typeof window !== "undefined" ? localStorage.getItem("finpilot_access_token") : null;
-    const response = await fetch(`${API_BASE_URL}/reports/export?report_type=${reportType}`, {
-      headers: token ? { Authorization: `Bearer ${token}` } : {},
-    });
+    try {
+      const response = await fetch(`${API_BASE_URL}/reports/export?report_type=${reportType}`, {
+        headers: token ? { Authorization: `Bearer ${token}` } : {},
+      });
 
-    if (response.ok) {
-      const blob = await response.blob();
-      const url = window.URL.createObjectURL(blob);
-      const a = document.createElement("a");
-      a.href = url;
-      a.download = `FinPilot_${reportType}_Report.json`;
-      document.body.appendChild(a);
-      a.click();
-      a.remove();
-      return true;
+      if (response.ok) {
+        const blob = await response.blob();
+        const url = window.URL.createObjectURL(blob);
+        const a = document.createElement("a");
+        a.href = url;
+        a.download = `FinPilot_${reportType}_Report.json`;
+        document.body.appendChild(a);
+        a.click();
+        a.remove();
+        return true;
+      }
+    } catch {
+      // Fallback to client-side JSON export
     }
 
     // Mock client-side file export download

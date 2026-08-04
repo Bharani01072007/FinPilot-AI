@@ -8,12 +8,17 @@ import uvicorn
 from fastapi import FastAPI, Request
 from fastapi.openapi.utils import get_openapi
 from starlette.middleware.base import BaseHTTPMiddleware
+import app.models  # Ensures all ORM model mappers are registered
 from app.api.router import api_router
 from app.config.settings import settings
+from starlette.exceptions import HTTPException as StarletteHTTPException
+from fastapi.exceptions import RequestValidationError
 from app.core.exceptions import (
     BaseAppException,
     custom_app_exception_handler,
     global_exception_handler,
+    http_exception_handler,
+    validation_exception_handler,
 )
 from app.core.logging import logger
 from app.middlewares.cors import setup_cors_middleware
@@ -25,12 +30,15 @@ class SecurityHeadersMiddleware(BaseHTTPMiddleware):
     """Middleware enforcing production security headers on all HTTP responses."""
 
     async def dispatch(self, request: Request, call_next):
+        if request.method == "OPTIONS":
+            return await call_next(request)
         response = await call_next(request)
         response.headers["X-Content-Type-Options"] = "nosniff"
         response.headers["X-Frame-Options"] = "DENY"
         response.headers["X-XSS-Protection"] = "1; mode=block"
         response.headers["Strict-Transport-Security"] = "max-age=31536000; includeSubDomains"
         return response
+
 
 
 def custom_openapi(app: FastAPI):
@@ -70,13 +78,15 @@ def create_app() -> FastAPI:
         redoc_url="/redoc" if settings.DEBUG else None,
     )
 
-    # 1. Configure CORS & Security Middlewares
-    setup_cors_middleware(app)
-    app.add_middleware(SecurityHeadersMiddleware)
+    # 1. Configure Middlewares (CORSMiddleware added last so it executes first for OPTIONS preflights)
     app.add_middleware(RequestLoggingMiddleware)
+    app.add_middleware(SecurityHeadersMiddleware)
+    setup_cors_middleware(app)
 
     # 2. Register Custom Exception Handlers
     app.add_exception_handler(BaseAppException, custom_app_exception_handler)
+    app.add_exception_handler(StarletteHTTPException, http_exception_handler)
+    app.add_exception_handler(RequestValidationError, validation_exception_handler)
     app.add_exception_handler(Exception, global_exception_handler)
 
     # 3. Mount Root Direct Endpoints (GET /health)
@@ -87,6 +97,16 @@ def create_app() -> FastAPI:
 
     # 5. Configure Swagger OpenAPI Security
     app.openapi = lambda: custom_openapi(app)
+
+    # 6. Database Initialization & Seeding
+    try:
+        from app.database.session import SessionLocal
+        from app.database.init_db import init_db
+        db = SessionLocal()
+        init_db(db)
+        db.close()
+    except Exception as e:
+        logger.warning("Auto database initialization note: %s", str(e))
 
     logger.info("Application %s successfully initialized with Security Headers & Swagger JWT Bearer Auth.", settings.APP_NAME)
     return app

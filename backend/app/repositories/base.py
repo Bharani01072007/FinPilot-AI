@@ -3,7 +3,7 @@
 Establishes standard data access operations decoupling ORM models from services.
 """
 
-from typing import Generic, List, Optional, Type, TypeVar
+from typing import Any, Generic, List, Optional, Type, TypeVar
 from pydantic import BaseModel
 from sqlalchemy.orm import Session
 from app.database.base import Base

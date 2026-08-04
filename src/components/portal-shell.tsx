@@ -41,6 +41,8 @@ import { Button } from "@/components/ui/button";
 import { AuroraBackground } from "@/components/aurora-background";
 import { cn } from "@/lib/utils";
 
+import { CustomerTranslator } from "@/components/customer-translator";
+
 export type Role = "customer" | "employee" | "manager";
 
 type NavItem = { label: string; to?: string; icon: LucideIcon; badge?: string };
@@ -52,16 +54,16 @@ const navs: Record<Role, { group: string; items: NavItem[] }[]> = {
       items: [
         { label: "Dashboard", to: "/customer", icon: LayoutDashboard },
         { label: "Document Vault", to: "/customer/vault", icon: Vault, badge: "New" },
-        { label: "AI Assistant", to: "/customer/assistant", icon: Bot },
+        { label: "AI Assistant", to: "/customer/assistant", icon: Bot, badge: "AI" },
       ],
     },
     {
       group: "Services",
       items: [
         { label: "Applications", to: "/customer/applications", icon: ClipboardList },
-        { label: "Smart Form Filling", to: "/customer/applications", icon: FileText },
-        { label: "Appointments", to: "/customer/applications", icon: CalendarClock },
-        { label: "Application History", to: "/customer/applications", icon: Activity },
+        { label: "Smart Form Filling", to: "/customer/applications?tab=smart-form", icon: FileText },
+        { label: "Appointments", to: "/customer/applications?tab=appointments", icon: CalendarClock },
+        { label: "Application History", to: "/customer/applications?tab=history", icon: Activity },
       ],
     },
     {
@@ -69,7 +71,7 @@ const navs: Record<Role, { group: string; items: NavItem[] }[]> = {
       items: [
         { label: "Notifications", to: "/customer/notifications", icon: Bell, badge: "3" },
         { label: "Security & Devices", to: "/customer/settings", icon: ShieldCheck },
-        { label: "Help Center", to: "/customer/assistant", icon: LifeBuoy },
+        { label: "Help Center", to: "/customer/help", icon: LifeBuoy },
       ],
     },
   ],
@@ -87,9 +89,10 @@ const navs: Record<Role, { group: string; items: NavItem[] }[]> = {
     {
       group: "AI Tools",
       items: [
+        { label: "AI Copilot", to: "/employee/assistant", icon: Bot, badge: "Copilot" },
         { label: "Risk Assessment", to: "/employee/risk", icon: ShieldAlert },
         { label: "AI Tools & Summary", to: "/employee/ai-tools", icon: Bot },
-        { label: "OCR Extractor", to: "/employee/documents", icon: FileText },
+        { label: "OCR Extractor", to: "/employee/documents?tab=ocr", icon: FileText },
         { label: "Notifications", to: "/employee/notifications", icon: Bell },
       ],
     },
@@ -107,6 +110,7 @@ const navs: Record<Role, { group: string; items: NavItem[] }[]> = {
     {
       group: "Governance",
       items: [
+        { label: "Executive AI Assistant", to: "/manager/assistant", icon: Bot, badge: "AI" },
         { label: "Risk Oversight", to: "/manager/risk", icon: ShieldAlert },
         { label: "AI Tools & Summary", to: "/manager/ai-tools", icon: Bot },
         { label: "User & Role Mgmt", to: "/manager/users", icon: Users },
@@ -195,7 +199,7 @@ export function PortalShell({
           transition={{ type: "spring", stiffness: 220, damping: 26 }}
           className="sticky top-0 hidden h-screen shrink-0 flex-col border-r border-border/60 bg-sidebar backdrop-blur-2xl lg:flex"
         >
-          <div className="flex items-center gap-3 px-4 py-5">
+          <Link to={`/${role}`} className="flex items-center gap-3 px-4 py-5 hover:opacity-90 transition-opacity">
             <BrandMark />
             <AnimatePresence initial={false}>
               {!collapsed && (
@@ -210,7 +214,7 @@ export function PortalShell({
                 </motion.div>
               )}
             </AnimatePresence>
-          </div>
+          </Link>
 
           <nav className="scrollbar-slim flex-1 space-y-5 overflow-y-auto px-3 pb-4">
             {groups.map((g) => (
@@ -222,7 +226,16 @@ export function PortalShell({
                 )}
                 <ul className="space-y-1">
                   {g.items.map((item) => {
-                    const active = item.to === pathname;
+                    const currentSearch = typeof window !== "undefined" ? window.location.search : "";
+                    let active = false;
+                    if (item.to) {
+                      const [targetPath, targetSearch] = item.to.split("?");
+                      if (targetSearch) {
+                        active = pathname === targetPath && currentSearch.includes(targetSearch);
+                      } else {
+                        active = pathname === item.to && (!currentSearch || currentSearch === "?tab=all");
+                      }
+                    }
                     const inner = (
                       <>
                         <item.icon className={cn("size-4 shrink-0", active && "text-primary")} />
@@ -294,6 +307,7 @@ export function PortalShell({
               </button>
 
               <div className="ml-auto flex items-center gap-1.5">
+                {role === "customer" && <CustomerTranslator />}
                 <Button variant="ghost" size="icon" onClick={toggle} aria-label="Toggle theme" className="rounded-xl">
                   {dark ? <Sun className="size-4" /> : <Moon className="size-4" />}
                 </Button>
@@ -365,7 +379,7 @@ export function PortalShell({
             initial={{ opacity: 0, y: 12 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ type: "spring", stiffness: 120, damping: 20 }}
-            className="mx-auto w-full max-w-[1440px] flex-1 px-4 py-6 sm:px-6 lg:py-8"
+            className="mx-auto w-full max-w-[1720px] flex-1 px-4 py-6 sm:px-8 lg:px-10 lg:py-8"
           >
             <div className="mb-6">
               <p className="text-xs font-medium uppercase tracking-widest text-primary">{meta.name}</p>

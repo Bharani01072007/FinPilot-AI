@@ -23,6 +23,15 @@ from app.modules.ai.orchestration.routes.orchestration import router as orchestr
 
 api_v1_router = APIRouter()
 
+@api_v1_router.get("/", summary="API V1 Base Information")
+def get_api_v1_info():
+    return {
+        "status": "online",
+        "service": "FinPilot AI Enterprise API v1",
+        "docs_url": "/docs",
+        "health_check": "/health"
+    }
+
 # Core Platform
 api_v1_router.include_router(health_router)
 api_v1_router.include_router(auth_router)

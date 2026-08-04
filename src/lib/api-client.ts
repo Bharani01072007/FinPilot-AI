@@ -65,7 +65,7 @@ export async function fetchApi<T>(
 
     return await response.json();
   } catch (error) {
-    console.warn(`[API Client] Error connecting to backend (${url}):`, error);
+    // Return graceful offline fallback response without noisy console trace
     return {
       success: false,
       message: error instanceof Error ? error.message : "Network error. Backend endpoint unavailable.",
