@@ -205,6 +205,31 @@ def logout(
     )
 
 
+@router.post(
+    "/logout-all",
+    response_model=APIResponse[None],
+    status_code=status.HTTP_200_OK,
+    summary="Logout From All Devices",
+    description="Revoke all active authentication sessions across all devices for current user.",
+)
+def logout_all(
+    request: Request,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+) -> APIResponse[None]:
+    auth_service.logout_all_devices(
+        db=db,
+        user_id=current_user.id,
+        ip_address=get_client_ip(request),
+        user_agent=request.headers.get("user-agent"),
+    )
+    return APIResponse(
+        success=True,
+        message="All active sessions have been revoked successfully",
+        data=None,
+    )
+
+
 @router.get(
     "/me",
     response_model=APIResponse[UserResponse],
@@ -219,4 +244,81 @@ def get_me(
         success=True,
         message="User profile retrieved successfully",
         data=UserResponse.model_validate(current_user),
+    )
+
+
+@router.put(
+    "/change-password",
+    response_model=APIResponse[None],
+    status_code=status.HTTP_200_OK,
+    summary="Change Password",
+    description="Change password for current authenticated user and revoke active sessions.",
+)
+def change_password(
+    req: ChangePasswordRequest,
+    request: Request,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+) -> APIResponse[None]:
+    auth_service.change_password(
+        db=db,
+        user_id=current_user.id,
+        req=req,
+        ip_address=get_client_ip(request),
+        user_agent=request.headers.get("user-agent"),
+    )
+    return APIResponse(
+        success=True,
+        message="Password updated successfully. Please log in again.",
+        data=None,
+    )
+
+
+@router.post(
+    "/forgot-password",
+    response_model=APIResponse[Dict[str, Any]],
+    status_code=status.HTTP_200_OK,
+    summary="Forgot Password Request",
+    description="Request password reset token interface.",
+)
+def forgot_password(
+    req: ForgotPasswordRequest,
+    request: Request,
+    db: Session = Depends(get_db),
+) -> APIResponse[Dict[str, Any]]:
+    res = auth_service.forgot_password_request(
+        db=db,
+        req=req,
+        ip_address=get_client_ip(request),
+        user_agent=request.headers.get("user-agent"),
+    )
+    return APIResponse(
+        success=True,
+        message=res["message"],
+        data=res,
+    )
+
+
+@router.post(
+    "/reset-password",
+    response_model=APIResponse[None],
+    status_code=status.HTTP_200_OK,
+    summary="Reset Password",
+    description="Reset user password using valid reset token.",
+)
+def reset_password(
+    req: ResetPasswordRequest,
+    request: Request,
+    db: Session = Depends(get_db),
+) -> APIResponse[None]:
+    auth_service.reset_password(
+        db=db,
+        req=req,
+        ip_address=get_client_ip(request),
+        user_agent=request.headers.get("user-agent"),
+    )
+    return APIResponse(
+        success=True,
+        message="Password has been reset successfully. Please log in with your new password.",
+        data=None,
     )
