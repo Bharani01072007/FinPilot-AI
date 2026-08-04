@@ -62,7 +62,12 @@ export function LoginForm({ defaultRole = "customer", initialMode = "signin" }: 
           setRole(defaultRole);
           navigate({ to: "/login/2fa" as any, search: { email, role: defaultRole } as any });
         } else {
-          toast.error(res.message || "Registration failed. Check password requirements (min 12 chars, UPPER, lower, number, symbol).");
+          if (res.message?.includes("already exists")) {
+            toast.info("Account already exists! Switched to Sign In.");
+            setAuthTab("signin");
+          } else {
+            toast.error(res.message || "Registration failed. Check password requirements.");
+          }
         }
       } catch {
         toast.error("Registration error. Please try again.");
