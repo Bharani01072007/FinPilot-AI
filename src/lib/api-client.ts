@@ -54,7 +54,18 @@ export async function fetchApi<T>(
 
     if (!response.ok) {
       const errorData = await response.json().catch(() => ({}));
-      const errorMessage = errorData.detail || errorData.message || `Request failed with status ${response.status}`;
+      let errorMessage = "Request failed";
+      if (typeof errorData.detail === "string") {
+        errorMessage = errorData.detail;
+      } else if (Array.isArray(errorData.detail) && errorData.detail.length > 0) {
+        const firstErr = errorData.detail[0];
+        errorMessage = typeof firstErr === "string" ? firstErr : firstErr.msg || JSON.stringify(firstErr);
+      } else if (errorData.message) {
+        errorMessage = errorData.message;
+      } else {
+        errorMessage = `Request failed with status ${response.status}`;
+      }
+
       return {
         success: false,
         message: errorMessage,
