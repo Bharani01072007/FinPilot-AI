@@ -20,6 +20,7 @@ from app.modules.ai.risk.routes.risk import router as risk_router
 from app.modules.ai.assistant.routes.assistant import router as assistant_router
 from app.modules.ai.recommendations.routes.recommendations import router as recommendations_router
 from app.modules.ai.orchestration.routes.orchestration import router as orchestration_router
+from app.modules.ai.agents.routes import router as agents_router
 
 api_v1_router = APIRouter()
 
@@ -53,3 +54,4 @@ api_v1_router.include_router(risk_router)
 api_v1_router.include_router(assistant_router)
 api_v1_router.include_router(recommendations_router)
 api_v1_router.include_router(orchestration_router)
+api_v1_router.include_router(agents_router)
