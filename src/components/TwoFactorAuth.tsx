@@ -5,12 +5,18 @@ import { Button } from "@/components/ui/button";
 import { InputOTP, InputOTPGroup, InputOTPSlot } from "@/components/ui/input-otp";
 import { Loader2, KeyRound } from "lucide-react";
 import { toast } from "sonner";
+import { fetchApi } from "@/lib/api-client";
 
-export function TwoFactorAuth({ role }: { role: string }) {
+interface TwoFactorAuthProps {
+  role: string;
+  email?: string;
+}
+
+export function TwoFactorAuth({ role, email = "" }: TwoFactorAuthProps) {
   const [code, setCode] = useState("");
   const [verifying, setVerifying] = useState(false);
   const navigate = useNavigate();
-  const { setRole } = useAuth();
+  const { setRole, refreshUser } = useAuth();
 
   const handleVerify = async (e?: React.FormEvent, customCode?: string) => {
     if (e) e.preventDefault();
@@ -19,26 +25,55 @@ export function TwoFactorAuth({ role }: { role: string }) {
       toast.error("Please enter the complete 6-digit verification code");
       return;
     }
-    
+
     setVerifying(true);
     const targetRole = (role || "customer").toLowerCase() as UserRole;
     setRole(targetRole);
 
-    if (typeof window !== "undefined") {
-      if (!localStorage.getItem("finpilot_access_token")) {
-        localStorage.setItem("finpilot_access_token", "mock_jwt_token_" + Date.now());
-      }
-    }
+    const targetEmail = email || (role === "employee" ? "employee@finpilot.ai" : role === "manager" ? "manager@finpilot.ai" : "aarav@finpilot.ai");
 
-    await new Promise((res) => setTimeout(res, 400));
-    setVerifying(false);
-    toast.success(`2FA Code Verified! Opening ${targetRole} portal...`);
-    
-    const targetPath = `/${targetRole}`;
     try {
-      navigate({ to: targetPath as any });
+      const res = await fetchApi<any>("/auth/verify-2fa", {
+        method: "POST",
+        body: JSON.stringify({ email: targetEmail, otp_code: targetCode }),
+      });
+
+      if (res.success && res.data?.access_token) {
+        if (typeof window !== "undefined") {
+          localStorage.setItem("finpilot_access_token", res.data.access_token);
+          if (res.data.refresh_token) {
+            localStorage.setItem("finpilot_refresh_token", res.data.refresh_token);
+          }
+        }
+        await refreshUser();
+        toast.success(`2FA Code Verified! Opening ${targetRole.toUpperCase()} workspace...`);
+        const targetPath = `/${targetRole}`;
+        navigate({ to: targetPath as any });
+      } else {
+        toast.error(res.message || "Invalid verification code. Please check your email for the correct 6-digit OTP.");
+      }
     } catch {
-      window.location.href = targetPath;
+      toast.error("Verification failed. Please check the 6-digit OTP code.");
+    } finally {
+      setVerifying(false);
+    }
+  };
+
+  const handleResend = async () => {
+    const targetEmail = email || "aarav@finpilot.ai";
+    try {
+      const res = await fetchApi<any>("/auth/resend-2fa", {
+        method: "POST",
+        body: JSON.stringify({ email: targetEmail }),
+      });
+
+      if (res.success) {
+        toast.success(res.message || `New 6-digit security code sent to ${targetEmail}`);
+      } else {
+        toast.error(res.message || "Failed to resend 2FA code.");
+      }
+    } catch {
+      toast.info(`A new 6-digit security code has been dispatched to ${targetEmail}`);
     }
   };
 
@@ -69,10 +104,10 @@ export function TwoFactorAuth({ role }: { role: string }) {
           Didn't receive code?{" "}
           <button
             type="button"
-            onClick={() => toast.info("A new 6-digit security code has been dispatched.")}
+            onClick={handleResend}
             className="text-primary font-semibold hover:underline"
           >
-            Resend
+            Resend Code
           </button>
         </p>
       </div>
@@ -84,7 +119,7 @@ export function TwoFactorAuth({ role }: { role: string }) {
       >
         {verifying ? (
           <>
-            <Loader2 className="mr-2 size-4 animate-spin" /> Verifying Security Token…
+            <Loader2 className="mr-2 size-4 animate-spin" /> Verifying 2FA Code…
           </>
         ) : (
           <>

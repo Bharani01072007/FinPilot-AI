@@ -3,11 +3,12 @@ import { TwoFactorAuth } from "@/components/TwoFactorAuth";
 import { motion } from "motion/react";
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from "@/components/ui/card";
 import { AuroraBackground } from "@/components/aurora-background";
-import { ShieldCheck, ArrowLeft } from "lucide-react";
+import { ShieldCheck, ArrowLeft, Mail } from "lucide-react";
 
 export const Route = createFileRoute("/login/2fa")({
   validateSearch: (search: Record<string, unknown>) => ({
     role: (search.role as string) || "customer",
+    email: (search.email as string) || "",
   }),
   component: TwoFAPage,
 });
@@ -15,6 +16,7 @@ export const Route = createFileRoute("/login/2fa")({
 function TwoFAPage() {
   const search = useSearch({ from: "/login/2fa" });
   const role = typeof search.role === "string" ? search.role : "customer";
+  const email = typeof search.email === "string" ? search.email : "";
 
   return (
     <div className="relative flex min-h-screen items-center justify-center p-4">
@@ -35,11 +37,17 @@ function TwoFAPage() {
               Two‑Factor Authentication
             </CardTitle>
             <CardDescription className="text-xs text-muted-foreground">
-              Enter the 6-digit security code for your <span className="capitalize font-semibold text-foreground">{role}</span> session
+              {email ? (
+                <span>
+                  Enter the 6-digit security code sent to <span className="font-semibold text-primary">{email}</span>
+                </span>
+              ) : (
+                <span>Enter the 6-digit security code for your <span className="capitalize font-semibold text-foreground">{role}</span> session</span>
+              )}
             </CardDescription>
           </CardHeader>
           <CardContent className="pt-2">
-            <TwoFactorAuth role={role} />
+            <TwoFactorAuth role={role} email={email} />
             <div className="mt-6 text-center">
               <Link
                 to="/login/role-select"

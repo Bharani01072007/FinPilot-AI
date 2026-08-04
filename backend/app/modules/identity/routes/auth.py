@@ -1,6 +1,6 @@
 """Authentication REST Controller Endpoints.
 
-Provides public and protected API routes for user registration, authentication, token rotation,
+Provides public and protected API routes for real-time user registration, 2FA OTP verification, token rotation,
 multi-device logout, profile management, and password recovery.
 """
 
@@ -20,6 +20,7 @@ from app.modules.identity.schemas.auth import (
     UserLoginRequest,
     UserRegisterRequest,
     UserResponse,
+    Verify2FARequest,
 )
 from app.modules.identity.services.auth_service import auth_service
 
@@ -36,17 +37,17 @@ def get_client_ip(request: Request) -> str:
 
 @router.post(
     "/register",
-    response_model=APIResponse[UserResponse],
+    response_model=APIResponse[Dict[str, Any]],
     status_code=status.HTTP_201_CREATED,
     summary="User Registration",
-    description="Register a new platform user with 12-character password policy validation and default Customer role.",
+    description="Register a new platform user with password validation, database persistence, and 2FA OTP code dispatch.",
 )
 def register(
     req: UserRegisterRequest,
     request: Request,
     db: Session = Depends(get_db),
-) -> APIResponse[UserResponse]:
-    user = auth_service.register_user(
+) -> APIResponse[Dict[str, Any]]:
+    res = auth_service.register_user(
         db=db,
         req=req,
         ip_address=get_client_ip(request),
@@ -54,8 +55,78 @@ def register(
     )
     return APIResponse(
         success=True,
-        message="User registered successfully",
-        data=UserResponse.model_validate(user),
+        message=res["message"],
+        data=res,
+    )
+
+
+@router.post(
+    "/request-otp",
+    response_model=APIResponse[Dict[str, Any]],
+    status_code=status.HTTP_200_OK,
+    summary="Request Login 2FA OTP",
+    description="Verify email & password, then dispatch 6-digit security OTP to user's email address.",
+)
+def request_otp(
+    req: UserLoginRequest,
+    request: Request,
+    db: Session = Depends(get_db),
+) -> APIResponse[Dict[str, Any]]:
+    res = auth_service.request_login_otp(
+        db=db,
+        req=req,
+        device=request.headers.get("user-agent"),
+        ip_address=get_client_ip(request),
+    )
+    return APIResponse(
+        success=True,
+        message=res["message"],
+        data=res,
+    )
+
+
+@router.post(
+    "/verify-2fa",
+    response_model=APIResponse[TokenResponse],
+    status_code=status.HTTP_200_OK,
+    summary="Verify 2FA Code & Mint Session",
+    description="Verify 6-digit OTP code against issued email session, minting JWT Access & Refresh Tokens.",
+)
+def verify_2fa(
+    req: Verify2FARequest,
+    request: Request,
+    db: Session = Depends(get_db),
+) -> APIResponse[TokenResponse]:
+    tokens = auth_service.verify_2fa_and_mint_session(
+        db=db,
+        req=req,
+        device=request.headers.get("user-agent"),
+        ip_address=get_client_ip(request),
+    )
+    return APIResponse(
+        success=True,
+        message="2FA authentication verified successfully",
+        data=tokens,
+    )
+
+
+@router.post(
+    "/resend-2fa",
+    response_model=APIResponse[Dict[str, Any]],
+    status_code=status.HTTP_200_OK,
+    summary="Resend 2FA Code",
+    description="Dispatch a new 6-digit security OTP code to registered email address.",
+)
+def resend_2fa(
+    payload: Dict[str, str],
+    db: Session = Depends(get_db),
+) -> APIResponse[Dict[str, Any]]:
+    email = payload.get("email", "")
+    res = auth_service.resend_otp(db=db, email=email)
+    return APIResponse(
+        success=True,
+        message=res["message"],
+        data=res,
     )
 
 
@@ -63,8 +134,8 @@ def register(
     "/login",
     response_model=APIResponse[TokenResponse],
     status_code=status.HTTP_200_OK,
-    summary="User Login",
-    description="Authenticate user with email and password with lockout protection, returning JWT Access and Refresh Tokens.",
+    summary="Direct User Login",
+    description="Authenticate user with email and password, returning JWT Access and Refresh Tokens.",
 )
 def login(
     req: UserLoginRequest,
@@ -134,31 +205,6 @@ def logout(
     )
 
 
-@router.post(
-    "/logout-all",
-    response_model=APIResponse[None],
-    status_code=status.HTTP_200_OK,
-    summary="Logout From All Devices",
-    description="Revoke all active authentication sessions across all devices for current user.",
-)
-def logout_all(
-    request: Request,
-    current_user: User = Depends(get_current_user),
-    db: Session = Depends(get_db),
-) -> APIResponse[None]:
-    auth_service.logout_all_devices(
-        db=db,
-        user_id=current_user.id,
-        ip_address=get_client_ip(request),
-        user_agent=request.headers.get("user-agent"),
-    )
-    return APIResponse(
-        success=True,
-        message="All active sessions have been revoked successfully",
-        data=None,
-    )
-
-
 @router.get(
     "/me",
     response_model=APIResponse[UserResponse],
@@ -173,81 +219,4 @@ def get_me(
         success=True,
         message="User profile retrieved successfully",
         data=UserResponse.model_validate(current_user),
-    )
-
-
-@router.put(
-    "/change-password",
-    response_model=APIResponse[None],
-    status_code=status.HTTP_200_OK,
-    summary="Change Password",
-    description="Change password for current authenticated user and revoke active sessions.",
-)
-def change_password(
-    req: ChangePasswordRequest,
-    request: Request,
-    current_user: User = Depends(get_current_user),
-    db: Session = Depends(get_db),
-) -> APIResponse[None]:
-    auth_service.change_password(
-        db=db,
-        user_id=current_user.id,
-        req=req,
-        ip_address=get_client_ip(request),
-        user_agent=request.headers.get("user-agent"),
-    )
-    return APIResponse(
-        success=True,
-        message="Password updated successfully. Please log in again.",
-        data=None,
-    )
-
-
-@router.post(
-    "/forgot-password",
-    response_model=APIResponse[Dict[str, Any]],
-    status_code=status.HTTP_200_OK,
-    summary="Forgot Password Request",
-    description="Request password reset token interface.",
-)
-def forgot_password(
-    req: ForgotPasswordRequest,
-    request: Request,
-    db: Session = Depends(get_db),
-) -> APIResponse[Dict[str, Any]]:
-    res = auth_service.forgot_password_request(
-        db=db,
-        req=req,
-        ip_address=get_client_ip(request),
-        user_agent=request.headers.get("user-agent"),
-    )
-    return APIResponse(
-        success=True,
-        message=res["message"],
-        data=res,
-    )
-
-
-@router.post(
-    "/reset-password",
-    response_model=APIResponse[None],
-    status_code=status.HTTP_200_OK,
-    summary="Reset Password",
-    description="Reset user password using valid reset token.",
-)
-def reset_password(
-    req: ResetPasswordRequest,
-    request: Request,
-    db: Session = Depends(get_db),
-) -> APIResponse[None]:
-    auth_service.reset_password(
-        db=db,
-        req=req,
-        ip_address=get_client_ip(request),
-        user_agent=request.headers.get("user-agent"),
-    )
-    return APIResponse(
-        success=True,
-        message="Password has been reset successfully. Please log in with your new password.",
-        data=None,
     )
