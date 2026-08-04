@@ -92,12 +92,15 @@ class AuthService:
             "role": role.lower(),
         }
 
-        # Real-time Dispatch Log Output
+        # Real-time Dispatch Log Output (ASCII safe for Windows cp1252 console)
         logger.info("=========================================================")
-        logger.info("✉️ [REALTIME 2FA DISPATCH] Destination: %s", email)
-        logger.info("🔐 [2FA SECURITY CODE]: %s (Valid for 10 minutes)", otp_code)
+        logger.info("[REALTIME 2FA DISPATCH] Destination: %s", email)
+        logger.info("[2FA SECURITY CODE]: %s (Valid for 10 minutes)", otp_code)
         logger.info("=========================================================")
-        print(f"\n✉️ [REALTIME 2FA DISPATCH] Sent 2FA OTP [{otp_code}] to {email}\n")
+        try:
+            print(f"\n[REALTIME 2FA DISPATCH] Sent 2FA OTP [{otp_code}] to {email}\n")
+        except Exception:
+            pass
 
         return otp_code
 
