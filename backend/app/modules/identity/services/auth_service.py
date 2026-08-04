@@ -64,17 +64,21 @@ class AuthService:
         details: Optional[Dict[str, Any]] = None,
     ) -> None:
         """Write an authentication security event to audit_logs without storing sensitive credentials."""
-        audit_entry = AuditLog(
-            user_id=user_id,
-            entity="User",
-            entity_id=user_id or "ANONYMOUS",
-            action=action,
-            new_value=details or {},
-            ip_address=ip_address,
-            user_agent=user_agent,
-        )
-        db.add(audit_entry)
-        db.commit()
+        try:
+            audit_entry = AuditLog(
+                user_id=user_id,
+                entity="User",
+                entity_id=user_id or "ANONYMOUS",
+                action=action,
+                new_value=details or {},
+                ip_address=ip_address,
+                user_agent=user_agent,
+            )
+            db.add(audit_entry)
+            db.commit()
+        except Exception as err:
+            db.rollback()
+            logger.warning("Audit log note: %s", str(err))
 
     def _generate_and_dispatch_otp(self, email: str, user_id: str, role: str = "customer") -> str:
         """Generate a random 6-digit 2FA OTP code and dispatch email notification."""
@@ -126,8 +130,21 @@ class AuthService:
 
         target_role_name = (req.role or "customer").capitalize()
         role = self.user_repo.get_role_by_name(db, target_role_name) or self.user_repo.get_role_by_name(db, "Customer")
+        if not role:
+            try:
+                from app.modules.identity.models import Role
+                role = Role(name=target_role_name, description=f"{target_role_name} workspace role")
+                db.add(role)
+                db.commit()
+                db.refresh(role)
+            except Exception:
+                db.rollback()
+
         if role:
-            self.user_repo.assign_role(db, user.id, role.id)
+            try:
+                self.user_repo.assign_role(db, user.id, role.id)
+            except Exception:
+                db.rollback()
 
         self._log_security_event(
             db, action="User Registration", user_id=user.id, ip_address=ip_address, user_agent=user_agent
