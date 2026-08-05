@@ -25,6 +25,7 @@ export type VaultDoc = {
   tags: string[];
   extracted?: { label: string; value: string }[];
   shared?: boolean;
+  rawFile?: File;
 };
 
 export type VaultCategory = {
