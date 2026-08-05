@@ -18,6 +18,7 @@ from app.modules.applications.schemas.application import (
     ApplicationAssignRequest,
     ApplicationCreateRequest,
     ApplicationListResponse,
+    ApplicationResponse,
     ApplicationSearchFilter,
     ApplicationUpdateRequest,
     DashboardSummaryResponse,

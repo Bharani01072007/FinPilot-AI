@@ -89,15 +89,19 @@ class RefreshTokenRequest(BaseModel):
 
 
 class ChangePasswordRequest(BaseModel):
-    """Change password request model."""
+    """Change password request model supporting old_password and current_password aliases."""
 
-    old_password: str = Field(..., description="Current account password")
+    old_password: Optional[str] = Field(default=None, description="Current account password")
+    current_password: Optional[str] = Field(default=None, description="Alias for current account password")
     new_password: str = Field(..., description="New password conforming to 12-char policy")
 
     @field_validator("new_password")
     @classmethod
     def check_new_password(cls, v: str) -> str:
         return validate_password_strength(v)
+
+    def get_old_password(self) -> str:
+        return self.old_password or self.current_password or ""
 
 
 class ForgotPasswordRequest(BaseModel):

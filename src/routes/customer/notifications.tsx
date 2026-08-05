@@ -73,9 +73,25 @@ function CustomerNotificationsPage() {
             ))}
           </div>
 
-          <Button variant="outline" size="sm" onClick={loadData} className="rounded-xl">
-            Refresh Notifications
-          </Button>
+          <div className="flex items-center gap-2">
+            <Button variant="outline" size="sm" onClick={async () => {
+              await notificationService.markAllAsRead();
+              setItems((prev) => prev.map((n) => ({ ...n, is_read: true })));
+              toast.success("All notifications marked as read");
+            }} className="rounded-xl">
+              <Check className="size-3.5 mr-1" /> Mark All Read
+            </Button>
+            <Button variant="outline" size="sm" onClick={async () => {
+              await notificationService.clearAll();
+              setItems([]);
+              toast.info("All notifications cleared");
+            }} className="rounded-xl text-destructive hover:text-destructive">
+              <Trash2 className="size-3.5 mr-1" /> Clear All
+            </Button>
+            <Button variant="outline" size="sm" onClick={loadData} className="rounded-xl">
+              Refresh
+            </Button>
+          </div>
         </div>
 
         {/* Notifications List */}

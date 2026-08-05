@@ -5,7 +5,7 @@ read/unread state management, archiving, and deletion.
 """
 
 from datetime import datetime
-from typing import Optional
+from typing import Dict, Optional
 from fastapi import APIRouter, Depends, Query, status
 from sqlalchemy.orm import Session
 
@@ -182,6 +182,38 @@ def archive_notification(
 ) -> APIResponse[NotificationResponse]:
     res = notification_service.archive_notification(db, id, current_user)
     return APIResponse(success=True, message="Notification archived successfully", data=res)
+
+
+@router.patch(
+    "/read-all",
+    response_model=APIResponse[Dict[str, int]],
+    status_code=status.HTTP_200_OK,
+    summary="Mark All Notifications Read",
+    description="Mark all notifications as READ for current user.",
+    dependencies=[Depends(RequireRoles("Customer", "Employee", "Manager", "Admin"))],
+)
+def mark_all_read_endpoint(
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+) -> APIResponse[Dict[str, int]]:
+    count = notification_service.mark_all_as_read(db, current_user.id)
+    return APIResponse(success=True, message=f"Marked {count} notifications as read", data={"updated_count": count})
+
+
+@router.delete(
+    "",
+    response_model=APIResponse[Dict[str, int]],
+    status_code=status.HTTP_200_OK,
+    summary="Clear All Notifications",
+    description="Soft delete all notifications for current user.",
+    dependencies=[Depends(RequireRoles("Customer", "Employee", "Manager", "Admin"))],
+)
+def clear_all_notifications_endpoint(
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+) -> APIResponse[Dict[str, int]]:
+    count = notification_service.clear_all_notifications(db, current_user.id)
+    return APIResponse(success=True, message=f"Cleared {count} notifications", data={"cleared_count": count})
 
 
 @router.delete(

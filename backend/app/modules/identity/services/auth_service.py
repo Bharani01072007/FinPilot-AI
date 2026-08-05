@@ -425,7 +425,7 @@ class AuthService:
         if not user:
             raise NotFoundException(message="User not found")
 
-        if not verify_password(req.old_password, user.password_hash):
+        if not verify_password(req.get_old_password(), user.password_hash):
             raise AuthenticationException(message="Incorrect existing password")
 
         user.password_hash = hash_password(req.new_password)

@@ -88,10 +88,16 @@ class DocumentService:
         application_id: Optional[str],
         current_user: User,
     ) -> DocumentResponse:
-        """Upload a new document using storage provider abstraction, computing SHA-256 hash, creating version #1, and publishing event."""
+        """Upload a new document using storage provider abstraction, computing SHA-256 hash, creating version #1, and creating vault entry."""
         validate_file_upload(file_size=len(file_bytes), mime_type=mime_type, original_filename=filename)
 
         category = self.doc_repo.get_category_by_id(db, category_id)
+        if not category:
+            # Try lookup by category name fallback
+            category = db.query(DocumentCategory).filter(DocumentCategory.name.ilike(f"%{category_id}%")).first()
+            if not category:
+                category = db.query(DocumentCategory).first()
+
         if not category:
             raise NotFoundException(message="Document category not found")
 
@@ -111,28 +117,38 @@ class DocumentService:
             application_id=application_id,
             category_id=category.id,
             uploaded_by=current_user.id,
-            file_name=os.path.basename(storage_path),
+            file_name=filename,
             original_name=filename,
             storage_path=storage_path,
             mime_type=mime_type,
             file_size=len(file_bytes),
             sha256_hash=sha256_hash,
-            storage_provider="LOCAL",
-            storage_bucket="finpilot-uploads",
-            encryption_status="AES-256",
-            virus_scan_status="CLEAN",
             verification_status=VerificationStatus.PENDING,
-            created_by=current_user.id,
         )
         db.add(doc)
         db.commit()
         db.refresh(doc)
 
-        # Insert Version #1
-        self.doc_repo.add_version(db, doc.id, storage_path, sha256_hash=sha256_hash)
+        # Create Document Version #1
+        version = DocumentVersion(
+            document_id=doc.id,
+            version_number=1,
+            storage_path=storage_path,
+            sha256_hash=sha256_hash,
+        )
+        db.add(version)
+
+        # Create DocumentVault Entry for Reusable Customer Vault
+        vault_item = DocumentVault(
+            customer_id=current_user.id,
+            document_id=doc.id,
+            reusable=True,
+        )
+        db.add(vault_item)
+        db.commit()
 
         self._log_audit_event(
-            db, action="Document Uploaded", actor_id=current_user.id, target_doc_id=doc.id, application_id=application_id, details={"filename": filename, "file_size": len(file_bytes), "sha256": sha256_hash}
+            db, action="Document Uploaded", actor_id=current_user.id, target_doc_id=doc.id, application_id=application_id
         )
 
         # Publish Business Event

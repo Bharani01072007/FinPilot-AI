@@ -69,8 +69,18 @@ export const notificationService = {
     return res.success;
   },
 
+  async markAllAsRead(): Promise<boolean> {
+    const res = await fetchApi(`/notifications/read-all`, { method: "PATCH" });
+    return res.success;
+  },
+
   async archive(id: string): Promise<boolean> {
     const res = await fetchApi(`/notifications/${id}/archive`, { method: "PATCH" });
+    return res.success;
+  },
+
+  async clearAll(): Promise<boolean> {
+    const res = await fetchApi(`/notifications`, { method: "DELETE" });
     return res.success;
   },
 };

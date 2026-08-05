@@ -152,6 +152,18 @@ class NotificationService:
         count = self.notif_repo.get_unread_count(db, user_id)
         return NotificationUnreadCountResponse(unread_count=count)
 
+    def mark_all_as_read(self, db: Session, user_id: str) -> int:
+        """Mark all notifications as read for a user."""
+        count = self.notif_repo.mark_all_read(db, user_id)
+        self._log_audit_event(db, action="All Notifications Marked Read", actor_id=user_id, target_notif_id="", recipient_user_id=user_id)
+        return count
+
+    def clear_all_notifications(self, db: Session, user_id: str) -> int:
+        """Clear/delete all notifications for a user."""
+        count = self.notif_repo.clear_all_notifications(db, user_id)
+        self._log_audit_event(db, action="All Notifications Cleared", actor_id=user_id, target_notif_id="", recipient_user_id=user_id)
+        return count
+
     def search_notifications(self, db: Session, user_id: str, filters: NotificationSearchFilter) -> NotificationListResponse:
         """Search and paginate notifications for recipient user."""
         items, total = self.notif_repo.search_notifications(db, user_id, filters)

@@ -211,7 +211,7 @@ function CustomerHelpPage() {
               </p>
               <p className="text-muted-foreground">Toll-Free: 1800-FINPILOT (1800-346-7456)</p>
               <p className="text-muted-foreground flex items-center gap-1">
-                <Mail className="size-3.5 text-primary" /> support@finpilot.ai
+                <Mail className="size-3.5 text-primary" /> finpilotaiadmin@gmail.com
               </p>
             </div>
           </div>
