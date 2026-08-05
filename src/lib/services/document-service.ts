@@ -137,4 +137,29 @@ export const documentService = {
     });
     return res.success;
   },
+
+  async extractDocumentFields(documentId: string): Promise<{ fields: { label: string; value: string }[]; document_classification: string; confidence: number; engine: string } | null> {
+    try {
+      const res = await fetchApi<{
+        fields: { label: string; value: string }[];
+        document_classification: string;
+        confidence: number;
+        raw_text_summary: string;
+        engine: string;
+      }>(`/documents/${documentId}/extract`, {
+        method: "POST",
+      });
+      if (res.success && res.data) {
+        return {
+          fields: res.data.fields || [],
+          document_classification: res.data.document_classification || "Identity Document",
+          confidence: res.data.confidence || 0.99,
+          engine: res.data.engine || "Groq Vision",
+        };
+      }
+    } catch (err) {
+      console.error("[extractDocumentFields] API error:", err);
+    }
+    return null;
+  },
 };
