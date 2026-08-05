@@ -33,22 +33,21 @@ class KnowledgeAssistantService:
 
         # 2. Build grounded prompt
         system_prompt = (
-            "You are FinPilot AI's friendly and knowledgeable customer support assistant. "
-            "Answer ONLY based on the provided knowledge context. "
-            "If the answer is not in the context, say 'I don't have information on that. Please contact our support team.' "
-            "Always cite the [Source] from the context."
+            "You are FinPilot AI's intelligent banking and credit financial assistant. "
+            "Help the customer with home loans, document vault requirements, credit risk scores, and financial services. "
+            "Use the provided knowledge context when applicable, and provide a clear, professional, and structured answer."
         )
         prompt = (
             f"KNOWLEDGE CONTEXT:\n{context_text}\n\n"
             f"CUSTOMER QUESTION: {question}\n\n"
-            "Provide a clear, helpful, and grounded answer:"
+            "Provide a clear, helpful, and structured answer:"
         )
 
         # 3. Route through AI Gateway (guardrails + audit logging)
         result = ai_gateway.generate_completion(
             prompt=prompt,
             system_prompt=system_prompt,
-            provider_name="Gemini",
+            provider_name="Groq",
             temperature=0.3,
             max_tokens=512,
             metadata={"session_id": session_id, "module": "KnowledgeAssistant"},

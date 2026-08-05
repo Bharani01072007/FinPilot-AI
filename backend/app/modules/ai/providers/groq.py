@@ -33,6 +33,7 @@ class GroqProvider(AIProvider):
                 settings.GROQ_API_KEY_1,
                 settings.GROQ_API_KEY_2,
                 settings.GROQ_API_KEY_3,
+                settings.GROQ_API_KEY_4,
             ] if k and k.strip()
         ]
         return keys

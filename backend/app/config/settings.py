@@ -55,6 +55,7 @@ class Settings(BaseSettings):
     GROQ_API_KEY_1: str = ""
     GROQ_API_KEY_2: str = ""
     GROQ_API_KEY_3: str = ""
+    GROQ_API_KEY_4: str = ""
     GEMINI_API_KEY: str = ""
     OPENAI_API_KEY: str = ""
 
