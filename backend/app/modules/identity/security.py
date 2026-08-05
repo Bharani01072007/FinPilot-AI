@@ -7,7 +7,14 @@ and JWT access & refresh token claims processing.
 import hashlib
 import uuid
 from datetime import datetime, timedelta, timezone
-from typing import Any, Dict, List, Optional
+import bcrypt
+if not hasattr(bcrypt, "__about__"):
+    try:
+        version_str = getattr(bcrypt, "__version__", "4.0.1")
+        bcrypt.__about__ = type("About", (), {"__version__": version_str})()
+    except Exception:
+        pass
+
 from passlib.context import CryptContext
 from jose import JWTError, jwt
 from app.config.settings import settings
