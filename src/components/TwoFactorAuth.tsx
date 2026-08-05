@@ -78,8 +78,8 @@ export function TwoFactorAuth({ role, email = "" }: TwoFactorAuthProps) {
   };
 
   return (
-    <form onSubmit={handleVerify} className="space-y-6 pt-2">
-      <div className="flex flex-col items-center justify-center space-y-3">
+    <form onSubmit={handleVerify} className="space-y-6 pt-2" suppressHydrationWarning>
+      <div className="flex flex-col items-center justify-center space-y-3" suppressHydrationWarning>
         <InputOTP
           maxLength={6}
           value={code}
@@ -106,6 +106,7 @@ export function TwoFactorAuth({ role, email = "" }: TwoFactorAuthProps) {
             type="button"
             onClick={handleResend}
             className="text-primary font-semibold hover:underline"
+            suppressHydrationWarning
           >
             Resend Code
           </button>
@@ -116,6 +117,7 @@ export function TwoFactorAuth({ role, email = "" }: TwoFactorAuthProps) {
         type="submit"
         className="h-11 w-full rounded-xl bg-brand text-white shadow-glow hover:opacity-95 transition-all font-semibold"
         disabled={verifying || code.length !== 6}
+        suppressHydrationWarning
       >
         {verifying ? (
           <>
