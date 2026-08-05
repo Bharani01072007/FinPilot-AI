@@ -100,33 +100,41 @@ export function LoginForm({ defaultRole = "customer", initialMode = "signin" }: 
 
   return (
     <div className="space-y-5">
-      {/* Sign In vs Sign Up Tab Switcher */}
-      <div className="flex rounded-xl bg-muted/60 p-1 border border-border/40" suppressHydrationWarning>
-        <button
-          type="button"
-          onClick={() => setAuthTab("signin")}
-          suppressHydrationWarning
-          className={`flex-1 rounded-lg py-2 text-xs font-semibold transition-all ${
-            authTab === "signin"
-              ? "bg-card text-foreground shadow-sm font-bold"
-              : "text-muted-foreground hover:text-foreground"
-          }`}
-        >
-          Sign In
-        </button>
-        <button
-          type="button"
-          onClick={() => setAuthTab("signup")}
-          suppressHydrationWarning
-          className={`flex-1 rounded-lg py-2 text-xs font-semibold transition-all ${
-            authTab === "signup"
-              ? "bg-card text-foreground shadow-sm font-bold"
-              : "text-muted-foreground hover:text-foreground"
-          }`}
-        >
-          Create Account
-        </button>
-      </div>
+      {/* Sign In vs Sign Up Tab Switcher (Create Account enabled for Customer role only) */}
+      {defaultRole === "customer" ? (
+        <div className="flex rounded-xl bg-muted/60 p-1 border border-border/40" suppressHydrationWarning>
+          <button
+            type="button"
+            onClick={() => setAuthTab("signin")}
+            suppressHydrationWarning
+            className={`flex-1 rounded-lg py-2 text-xs font-semibold transition-all ${
+              authTab === "signin"
+                ? "bg-card text-foreground shadow-sm font-bold"
+                : "text-muted-foreground hover:text-foreground"
+            }`}
+          >
+            Sign In
+          </button>
+          <button
+            type="button"
+            onClick={() => setAuthTab("signup")}
+            suppressHydrationWarning
+            className={`flex-1 rounded-lg py-2 text-xs font-semibold transition-all ${
+              authTab === "signup"
+                ? "bg-card text-foreground shadow-sm font-bold"
+                : "text-muted-foreground hover:text-foreground"
+            }`}
+          >
+            Create Account
+          </button>
+        </div>
+      ) : (
+        <div className="rounded-xl bg-muted/40 p-3 border border-border/40 text-center">
+          <p className="text-xs text-muted-foreground">
+            🔒 <span className="font-semibold text-foreground capitalize">{defaultRole}</span> enterprise credentials are provisioned by your Organization Admin.
+          </p>
+        </div>
+      )}
 
       <form className="space-y-4" onSubmit={handleSubmit} suppressHydrationWarning>
         {authTab === "signup" && (
