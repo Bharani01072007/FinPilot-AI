@@ -5,7 +5,7 @@ Orchestrates multi-stage document processing (Classification -> OCR -> Cleaning 
 
 import time
 from typing import Any, Dict, Optional
-from app.modules.ai.document_intelligence.ocr.local_ocr import local_ocr_provider
+from app.modules.ai.document_intelligence.ocr.api4ai_ocr import api4ai_ocr_provider
 from app.modules.ai.document_intelligence.pipeline.classification import classification_service
 from app.modules.ai.document_intelligence.pipeline.cleaning import text_cleaning_service
 from app.modules.ai.document_intelligence.pipeline.confidence import confidence_scoring_service
@@ -18,7 +18,7 @@ class DocumentIntelligencePipeline:
     """Multi-stage document processing pipeline orchestrator."""
 
     def __init__(self, ocr=None):
-        self.ocr = ocr or local_ocr_provider
+        self.ocr = ocr or api4ai_ocr_provider
 
     def process(
         self,

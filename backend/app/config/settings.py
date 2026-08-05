@@ -50,7 +50,7 @@ class Settings(BaseSettings):
     EMAILS_FROM_NAME: str = "FinPilot Security"
     EMAILS_FROM_EMAIL: str = "noreply@finpilot.ai"
 
-    # AI Gateway API Keys & Multi-Key Load Balancing (Groq, Gemini, OpenAI)
+    # AI Gateway API Keys & Multi-Key Load Balancing (Groq, Gemini, OpenAI, API4AI)
     GROQ_API_KEY: str = ""
     GROQ_API_KEY_1: str = ""
     GROQ_API_KEY_2: str = ""
@@ -58,6 +58,7 @@ class Settings(BaseSettings):
     GROQ_API_KEY_4: str = ""
     GEMINI_API_KEY: str = ""
     OPENAI_API_KEY: str = ""
+    API4AI_OCR_API_KEY: str = "a4a-r2iro0hNRIUTaYEyZd13zRsiYJvwojul"
 
     # CORS Settings
     CORS_ORIGINS: List[str] = [
