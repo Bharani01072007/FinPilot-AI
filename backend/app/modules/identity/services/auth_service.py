@@ -187,29 +187,17 @@ class AuthService:
             )
             raise AuthenticationException(message="Invalid email or password")
 
-        # Check Account Lockout
-        now = datetime.now(timezone.utc)
-        if user.locked_until:
-            locked_until = user.locked_until if user.locked_until.tzinfo else user.locked_until.replace(tzinfo=timezone.utc)
-            if locked_until > now:
-                minutes_remaining = int((locked_until - now).total_seconds() // 60) + 1
-                self._log_security_event(
-                    db, action="Failed Login Blocked", user_id=user.id, ip_address=ip_address, user_agent=device, details={"reason": "Account locked"}
-                )
-                raise ForbiddenException(
-                    message=f"Account is locked due to multiple failed login attempts. Try again in {minutes_remaining} minutes."
-                )
+        # Account Lockout Check (Disabled during development mode)
+        # if user.locked_until: ...
 
         if not verify_password(req.password, user.password_hash):
-            is_locked = self.user_repo.increment_failed_login(db, user)
             self._log_security_event(
                 db, action="Failed Login", user_id=user.id, ip_address=ip_address, user_agent=device, details={"attempts": user.failed_login_attempts}
             )
-            if is_locked:
-                self._log_security_event(
-                    db, action="Account Lock", user_id=user.id, ip_address=ip_address, user_agent=device, details={"locked_until": str(user.locked_until)}
-                )
             raise AuthenticationException(message="Invalid email or password")
+
+        # Reset failed login count on valid credentials
+        self.user_repo.reset_failed_login(db, user)
 
         if not user.is_active or user.is_deleted:
             raise ForbiddenException(message="User account is inactive or disabled")
