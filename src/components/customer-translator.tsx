@@ -24,22 +24,26 @@ export const CUSTOMER_LANGUAGES: LanguageOption[] = [
 ];
 
 function getActiveLanguage(): string {
-  if (typeof document !== "undefined") {
-    const cookies = document.cookie.split(";");
-    for (const c of cookies) {
-      const [key, val] = c.trim().split("=");
-      if (key === "googtrans" && val) {
-        const parts = val.split("/");
-        const lastPart = parts[parts.length - 1];
-        if (lastPart && CUSTOMER_LANGUAGES.some((l) => l.code === lastPart)) {
-          return lastPart;
+  try {
+    if (typeof document !== "undefined") {
+      const cookies = document.cookie.split(";");
+      for (const c of cookies) {
+        const [key, val] = c.trim().split("=");
+        if (key === "googtrans" && val) {
+          const parts = val.split("/");
+          const lastPart = parts[parts.length - 1];
+          if (lastPart && CUSTOMER_LANGUAGES.some((l) => l.code === lastPart)) {
+            return lastPart;
+          }
         }
       }
     }
-  }
-  if (typeof localStorage !== "undefined") {
-    const saved = localStorage.getItem("finpilot-customer-lang");
-    if (saved && CUSTOMER_LANGUAGES.some((l) => l.code === saved)) return saved;
+    if (typeof window !== "undefined" && window.localStorage && typeof window.localStorage.getItem === "function") {
+      const saved = window.localStorage.getItem("finpilot-customer-lang");
+      if (saved && CUSTOMER_LANGUAGES.some((l) => l.code === saved)) return saved;
+    }
+  } catch {
+    // Storage access fallback
   }
   return "en";
 }
@@ -94,7 +98,13 @@ export function CustomerTranslator() {
 
   const changeLanguage = (langCode: string) => {
     setSelectedLang(langCode);
-    localStorage.setItem("finpilot-customer-lang", langCode);
+    try {
+      if (typeof window !== "undefined" && window.localStorage && typeof window.localStorage.setItem === "function") {
+        window.localStorage.setItem("finpilot-customer-lang", langCode);
+      }
+    } catch {
+      // Storage fallback
+    }
     setDropdownOpen(false);
 
     // Set cookies for Google Translate engine

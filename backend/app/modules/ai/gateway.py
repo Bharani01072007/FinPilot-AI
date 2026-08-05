@@ -14,14 +14,18 @@ from app.modules.ai.providers.base import AICompletionResult, AIProvider
 from app.modules.ai.providers.gemini import gemini_provider
 
 
+from app.modules.ai.providers.groq import groq_provider
+
+
 class AIGateway:
     """Central AI Gateway routing and orchestrating AI completions."""
 
     def __init__(self, default_provider: Optional[AIProvider] = None):
         self._providers: Dict[str, AIProvider] = {
             "gemini": gemini_provider,
+            "groq": groq_provider,
         }
-        self._default_provider = default_provider or gemini_provider
+        self._default_provider = default_provider or groq_provider
 
     def register_provider(self, name: str, provider: AIProvider) -> None:
         """Register a new LLM provider with the gateway."""

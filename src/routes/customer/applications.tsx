@@ -288,10 +288,43 @@ function CustomerApplicationsPage() {
                         value={appName}
                         onChange={(e) => setAppName(e.target.value)}
                       >
-                        <option value="Home Loan">Home Loan (Housing Credit)</option>
-                        <option value="Business Loan">Business Expansion Loan</option>
-                        <option value="Auto Loan">Vehicle Financing</option>
-                        <option value="Working Capital">Working Capital Line</option>
+                        <optgroup label="Loans & Credit Products">
+                          <option value="Home Loan (Housing Credit)">Home Loan (Housing Credit)</option>
+                          <option value="Personal Loan">Personal Loan</option>
+                          <option value="Vehicle Financing (Auto Loan)">Vehicle Financing (Auto Loan)</option>
+                          <option value="Education Loan">Education Loan</option>
+                          <option value="Gold Loan">Gold Loan</option>
+                          <option value="MSME Business Credit">MSME Business Credit</option>
+                          <option value="Business Expansion Loan">Business Expansion Loan</option>
+                          <option value="Working Capital Line">Working Capital Line</option>
+                          <option value="Loan Top-Up Request">Loan Top-Up Request</option>
+                          <option value="EMI Restructuring">EMI Restructuring</option>
+                          <option value="Loan Closure Request">Loan Closure Request</option>
+                          <option value="Credit Card Application">Credit Card Application</option>
+                        </optgroup>
+                        <optgroup label="Deposit Accounts & Investments">
+                          <option value="Savings Account">Savings Account</option>
+                          <option value="Current Account">Current Account</option>
+                          <option value="Corporate Account Opening">Corporate Account Opening</option>
+                          <option value="Fixed Deposit (FD)">Fixed Deposit (FD)</option>
+                          <option value="Recurring Deposit (RD)">Recurring Deposit (RD)</option>
+                          <option value="Demat Account">Demat Account</option>
+                          <option value="NPS Registration">NPS Registration</option>
+                          <option value="Mutual Funds Investment">Mutual Funds Investment</option>
+                        </optgroup>
+                        <optgroup label="Banking Services & Trade">
+                          <option value="KYC Information Update">KYC Information Update</option>
+                          <option value="Nominee Addition / Update">Nominee Addition / Update</option>
+                          <option value="Address Change Request">Address Change Request</option>
+                          <option value="PAN & Aadhaar Linking">PAN & Aadhaar Linking</option>
+                          <option value="Debit Card Replacement">Debit Card Replacement</option>
+                          <option value="Cheque Book Request">Cheque Book Request</option>
+                          <option value="Safe Deposit Locker Application">Safe Deposit Locker Application</option>
+                          <option value="Trade Finance & LC Opening">Trade Finance & LC Opening</option>
+                          <option value="Bank Guarantee (BG) Request">Bank Guarantee (BG) Request</option>
+                          <option value="UPI & FASTag Registration">UPI & FASTag Registration</option>
+                          <option value="Insurance Products (Life & Health)">Insurance Products (Life & Health)</option>
+                        </optgroup>
                       </select>
                     </div>
 
@@ -417,9 +450,43 @@ function CustomerApplicationsPage() {
                       value={sfProduct}
                       onChange={(e) => setSfProduct(e.target.value)}
                     >
-                      <option>Housing Credit (Home Loan)</option>
-                      <option>Business Expansion Credit</option>
-                      <option>Vehicle Financing</option>
+                      <optgroup label="Loans & Credit Products">
+                        <option value="Home Loan (Housing Credit)">Home Loan (Housing Credit)</option>
+                        <option value="Personal Loan">Personal Loan</option>
+                        <option value="Vehicle Financing (Auto Loan)">Vehicle Financing (Auto Loan)</option>
+                        <option value="Education Loan">Education Loan</option>
+                        <option value="Gold Loan">Gold Loan</option>
+                        <option value="MSME Business Credit">MSME Business Credit</option>
+                        <option value="Business Expansion Loan">Business Expansion Loan</option>
+                        <option value="Working Capital Line">Working Capital Line</option>
+                        <option value="Loan Top-Up Request">Loan Top-Up Request</option>
+                        <option value="EMI Restructuring">EMI Restructuring</option>
+                        <option value="Loan Closure Request">Loan Closure Request</option>
+                        <option value="Credit Card Application">Credit Card Application</option>
+                      </optgroup>
+                      <optgroup label="Deposit Accounts & Investments">
+                        <option value="Savings Account">Savings Account</option>
+                        <option value="Current Account">Current Account</option>
+                        <option value="Corporate Account Opening">Corporate Account Opening</option>
+                        <option value="Fixed Deposit (FD)">Fixed Deposit (FD)</option>
+                        <option value="Recurring Deposit (RD)">Recurring Deposit (RD)</option>
+                        <option value="Demat Account">Demat Account</option>
+                        <option value="NPS Registration">NPS Registration</option>
+                        <option value="Mutual Funds Investment">Mutual Funds Investment</option>
+                      </optgroup>
+                      <optgroup label="Banking Services & Trade">
+                        <option value="KYC Information Update">KYC Information Update</option>
+                        <option value="Nominee Addition / Update">Nominee Addition / Update</option>
+                        <option value="Address Change Request">Address Change Request</option>
+                        <option value="PAN & Aadhaar Linking">PAN & Aadhaar Linking</option>
+                        <option value="Debit Card Replacement">Debit Card Replacement</option>
+                        <option value="Cheque Book Request">Cheque Book Request</option>
+                        <option value="Safe Deposit Locker Application">Safe Deposit Locker Application</option>
+                        <option value="Trade Finance & LC Opening">Trade Finance & LC Opening</option>
+                        <option value="Bank Guarantee (BG) Request">Bank Guarantee (BG) Request</option>
+                        <option value="UPI & FASTag Registration">UPI & FASTag Registration</option>
+                        <option value="Insurance Products (Life & Health)">Insurance Products (Life & Health)</option>
+                      </optgroup>
                     </select>
                   </div>
 

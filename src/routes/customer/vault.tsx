@@ -1,6 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { AnimatePresence, motion } from "motion/react";
-import { useMemo, useState } from "react";
+import { useMemo, useState, useRef } from "react";
 import {
   AlertTriangle,
   ChevronRight,
@@ -66,8 +66,12 @@ function VaultPage() {
   const [selected, setSelected] = useState<VaultDoc | null>(null);
   const [reuseOpen, setReuseOpen] = useState(true);
 
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const [customDocs, setCustomDocs] = useState<VaultDoc[]>([]);
+
   const docs = useMemo(() => {
-    return vaultDocs.filter((d) => {
+    const combined = [...customDocs, ...vaultDocs];
+    return combined.filter((d) => {
       const matchCat =
         filter === "all" ||
         filter === "recent" ||
@@ -78,21 +82,43 @@ function VaultPage() {
         d.tags.some((t) => t.toLowerCase().includes(query.toLowerCase()));
       return matchCat && matchQ && filter !== "trash";
     });
-  }, [filter, query]);
+  }, [filter, query, customDocs]);
 
   const startUpload = async (file?: File) => {
     setUploading(true);
-    setProgress(20);
+    setProgress(30);
     try {
       if (file) {
         await documentService.uploadDocument(file, "identity");
+        const newDoc: VaultDoc = {
+          id: `doc-${Date.now()}`,
+          name: file.name,
+          category: "identity",
+          size: `${(file.size / (1024 * 1024)).toFixed(1)} MB`,
+          uploaded: new Date().toLocaleDateString("en-US", { day: "numeric", month: "short", year: "numeric" }),
+          versions: 1,
+          favourite: true,
+          shared: false,
+          health: "valid",
+          tags: ["KYC", "Verified"],
+        };
+        setCustomDocs((prev) => [newDoc, ...prev]);
+        toast.success(`Document '${file.name}' uploaded & saved to database!`);
+      } else {
+        toast.info("Opening device file selector...");
       }
       setProgress(100);
-      toast.success("Document uploaded & processed via Vault AI!");
     } catch {
       toast.error("Upload failed");
     } finally {
       setTimeout(() => setUploading(false), 600);
+    }
+  };
+
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      startUpload(file);
     }
   };
 
@@ -129,7 +155,7 @@ function VaultPage() {
                   <Button size="sm" className="rounded-xl bg-brand text-white" onClick={() => setReuseOpen(false)}>
                     Reuse existing
                   </Button>
-                  <Button size="sm" variant="outline" className="rounded-xl" onClick={() => startUpload()}>
+                  <Button size="sm" variant="outline" className="rounded-xl" onClick={() => fileInputRef.current?.click()}>
                     Upload new
                   </Button>
                 </div>
@@ -236,8 +262,15 @@ function VaultPage() {
                     ))}
                   </div>
 
-                  <Button size="sm" className="h-9 rounded-xl bg-brand text-white shadow-glow" onClick={() => startUpload()}>
-                    <CloudUpload className="size-4 mr-1" /> Upload
+                  <input
+                    type="file"
+                    ref={fileInputRef}
+                    onChange={handleFileChange}
+                    className="hidden"
+                    accept=".pdf,.png,.jpg,.jpeg,.webp,.doc,.docx"
+                  />
+                  <Button size="sm" className="h-9 rounded-xl bg-brand text-white shadow-glow" onClick={() => fileInputRef.current?.click()}>
+                    <CloudUpload className="size-4 mr-1" /> Select File from Device
                   </Button>
                 </div>
               </div>
