@@ -37,8 +37,8 @@ export async function fetchApi<T>(
       headers,
     });
 
-    // Handle 401 token refresh if refresh token available
-    if (response.status === 401 && !endpoint.includes("/auth/login") && !endpoint.includes("/auth/refresh")) {
+    // Handle 401 token refresh if refresh token available (exclude auth endpoints)
+    if (response.status === 401 && !endpoint.includes("/auth/")) {
       const refreshed = await tryRefreshToken();
       if (refreshed) {
         const newToken = typeof window !== "undefined" ? localStorage.getItem("finpilot_access_token") : null;
