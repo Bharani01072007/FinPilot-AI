@@ -7,7 +7,7 @@ reusable customer document vaults, tag management, secure preview/download URLs,
 from datetime import datetime, timezone
 import math
 import os
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, List, Optional, Tuple
 from sqlalchemy.orm import Session
 
 from app.core.exceptions import BaseAppException, ForbiddenException, NotFoundException
