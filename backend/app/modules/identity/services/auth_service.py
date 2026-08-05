@@ -168,7 +168,7 @@ class AuthService:
             "last_name": user.last_name,
             "role": req.role or "customer",
             "otp_dispatched": True,
-            "message": f"Account registered successfully. 2FA verification code [{otp_code}] dispatched to {email_clean}",
+            "message": f"Account registered successfully. 2FA verification code dispatched to {email_clean}. Please check your email inbox.",
         }
 
     def request_login_otp(
@@ -211,7 +211,7 @@ class AuthService:
             "email": user.email,
             "role": primary_role,
             "otp_dispatched": True,
-            "message": f"Credentials verified. 2FA verification code [{otp_code}] sent to {user.email}",
+            "message": f"Credentials verified. 2FA verification code sent to {user.email}. Please check your email inbox.",
         }
 
     def verify_2fa_and_mint_session(
