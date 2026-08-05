@@ -34,13 +34,13 @@ class KnowledgeAssistantService:
         # 2. Build grounded prompt
         system_prompt = (
             "You are FinPilot AI's intelligent banking and credit financial assistant. "
-            "Help the customer with home loans, document vault requirements, credit risk scores, and financial services. "
-            "Use the provided knowledge context when applicable, and provide a clear, professional, and structured answer."
+            "Always present your response in a clear, well-structured form with distinct line breaks, bold section titles, and numbered or bulleted lists. "
+            "Organize information into logical sections: Overview, Required Documents, Step-by-Step Procedure, and Next Steps."
         )
         prompt = (
             f"KNOWLEDGE CONTEXT:\n{context_text}\n\n"
             f"CUSTOMER QUESTION: {question}\n\n"
-            "Provide a clear, helpful, and structured answer:"
+            "Provide a well-structured, formatted response with clear headings and numbered lists:"
         )
 
         # 3. Route through AI Gateway (guardrails + audit logging)

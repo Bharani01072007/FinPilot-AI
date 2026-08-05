@@ -145,6 +145,82 @@ const languages: Record<Language, LangOption> = {
 
 type Msg = { id: number; role: "user" | "assistant"; text: string };
 
+function FormattedInlineText({ text }: { text: string }) {
+  const parts = text.split(/(\*\*.+?\*\*)/g);
+  return (
+    <>
+      {parts.map((part, i) => {
+        if (part.startsWith("**") && part.endsWith("**")) {
+          return (
+            <span key={i} className="font-bold text-foreground bg-primary/10 px-1.5 py-0.5 rounded-md border border-primary/20">
+              {part.slice(2, -2)}
+            </span>
+          );
+        }
+        return part;
+      })}
+    </>
+  );
+}
+
+function StructuredResponse({ text }: { text: string }) {
+  if (!text) return <span className="text-muted-foreground">Analyzing request…</span>;
+
+  const blocks = text.split(/\n\n+/);
+
+  return (
+    <div className="space-y-3.5 text-xs leading-relaxed">
+      {blocks.map((block, idx) => {
+        const trimmed = block.trim();
+        if (!trimmed) return null;
+
+        const lines = trimmed.split("\n").map((l) => l.trim()).filter(Boolean);
+
+        return (
+          <div key={idx} className="space-y-2">
+            {lines.map((line, lIdx) => {
+              // Section Header: **Header Title:** or ### Header
+              if (/^(\*\*|###).+:?\*\*?$/.test(line) || (/^\*\*.+\*\*:?/.test(line) && !line.includes("1.") && !line.includes("•") && !line.includes("-"))) {
+                const headerText = line.replace(/^###\s*/, "").replace(/\*\*/g, "").replace(/:$/, "");
+                return (
+                  <div key={lIdx} className="font-display font-bold text-foreground text-xs uppercase tracking-wider flex items-center gap-1.5 pt-2 pb-1 border-b border-border/40">
+                    <span className="size-2 rounded-full bg-primary" />
+                    <span>{headerText}</span>
+                  </div>
+                );
+              }
+
+              // List line: 1. Item or • Item or - Item
+              const listMatch = line.match(/^(\d+\.|\bullet|-|\*)\s*(.+)/);
+              if (listMatch) {
+                const bullet = listMatch[1];
+                const content = listMatch[2];
+                return (
+                  <div key={lIdx} className="flex items-start gap-2.5 rounded-xl bg-card/60 p-2.5 border border-border/40 text-xs shadow-soft">
+                    <span className="grid size-5 shrink-0 place-items-center rounded-lg bg-primary/15 text-primary font-bold text-[11px]">
+                      {bullet.includes(".") ? bullet.replace(".", "") : "✓"}
+                    </span>
+                    <div className="flex-1 text-foreground/90 font-medium">
+                      <FormattedInlineText text={content} />
+                    </div>
+                  </div>
+                );
+              }
+
+              // Normal text line
+              return (
+                <p key={lIdx} className="text-xs text-foreground/90">
+                  <FormattedInlineText text={line} />
+                </p>
+              );
+            })}
+          </div>
+        );
+      })}
+    </div>
+  );
+}
+
 function AssistantPage() {
   const [lang, setLang] = useState<Language>("en");
   const langConfig = languages[lang];
@@ -233,13 +309,17 @@ function AssistantPage() {
                 )}
                 <div
                   className={cn(
-                    "max-w-[min(46rem,80%)] text-sm leading-relaxed",
+                    "max-w-[min(46rem,85%)] text-sm leading-relaxed",
                     m.role === "user"
                       ? "rounded-2xl rounded-tr-md bg-primary px-4 py-2.5 text-primary-foreground font-medium"
-                      : "text-foreground glass rounded-2xl rounded-tl-md p-4 border-border/70",
+                      : "text-foreground glass rounded-2xl rounded-tl-md p-4 border-border/70 shadow-soft",
                   )}
                 >
-                  {m.text || <span className="text-muted-foreground">Analyzing request…</span>}
+                  {m.role === "user" ? (
+                    <span>{m.text}</span>
+                  ) : (
+                    <StructuredResponse text={m.text} />
+                  )}
                   {m.role === "assistant" && streaming && m.text && (
                     <span className="ml-0.5 inline-block h-4 w-[2px] animate-pulse bg-primary align-middle" />
                   )}
