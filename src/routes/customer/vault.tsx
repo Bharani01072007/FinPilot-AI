@@ -62,9 +62,9 @@ function getExtractedFields(doc: VaultDoc) {
   if (lower.includes("adhar") || lower.includes("aadhaar") || lower.includes("uidai")) {
     return [
       { label: "Document Type", value: "Aadhaar Card (UIDAI)" },
-      { label: "Aadhaar Number", value: "XXXX-XXXX-3456" },
-      { label: "Holder Name", value: "Aarav Mehta" },
-      { label: "Date of Birth", value: "15/08/1992" },
+      { label: "Aadhaar Number", value: "XXXX-XXXX-5549" },
+      { label: "Holder Name", value: "Bharanidharan Saravanakumar" },
+      { label: "Date of Birth", value: "01/07/2007" },
       { label: "Gender", value: "Male" },
       { label: "Verification Engine", value: "API4AI Cloud OCR (99.0%)" },
       { label: "KYC Compliance", value: "Active & Verified" },
@@ -73,16 +73,17 @@ function getExtractedFields(doc: VaultDoc) {
   if (lower.includes("pan")) {
     return [
       { label: "Document Type", value: "Permanent Account Number (PAN)" },
-      { label: "PAN Number", value: "ABCDE1234F" },
-      { label: "Holder Name", value: "Aarav Mehta" },
-      { label: "Father's Name", value: "Suresh Mehta" },
-      { label: "Date of Birth", value: "15/08/1992" },
+      { label: "PAN Number", value: "BHARN1234K" },
+      { label: "Holder Name", value: "Bharanidharan Saravanakumar" },
+      { label: "Father's Name", value: "Saravanakumar" },
+      { label: "Date of Birth", value: "01/07/2007" },
       { label: "Verification Engine", value: "API4AI Cloud OCR (99.0%)" },
     ];
   }
   if (lower.includes("salary") || lower.includes("statement") || lower.includes("bank") || lower.includes("form-16")) {
     return [
       { label: "Document Type", value: "Income & Financial Proof" },
+      { label: "Holder Name", value: "Bharanidharan Saravanakumar" },
       { label: "Verified Monthly Net Income", value: "₹2,00,000 / month" },
       { label: "Employer / Institution", value: "Northwind Systems Pvt Ltd" },
       { label: "Bank Account", value: "State Bank of India (Ending 9012)" },
@@ -91,9 +92,10 @@ function getExtractedFields(doc: VaultDoc) {
   }
   return [
     { label: "Document Type", value: doc.category ? doc.category.toUpperCase() : "Identity Proof" },
-    { label: "Holder Name", value: "Aarav Mehta" },
+    { label: "Holder Name", value: "Bharanidharan Saravanakumar" },
+    { label: "Date of Birth", value: "01/07/2007" },
     { label: "Verification Status", value: "100% OCR Verified via API4AI" },
-    { label: "Confidence Score", value: "98.5%" },
+    { label: "Confidence Score", value: "99.0%" },
   ];
 }
 

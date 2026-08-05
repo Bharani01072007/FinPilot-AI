@@ -59,9 +59,9 @@ export const vaultDocs: VaultDoc[] = [
     tags: ["KYC", "Verified"],
     shared: true,
     extracted: [
-      { label: "Name", value: "Aarav Mehta" },
-      { label: "Aadhaar No.", value: "XXXX XXXX 4821" },
-      { label: "DOB", value: "04 Aug 1992" },
+      { label: "Name", value: "Bharanidharan Saravanakumar" },
+      { label: "Aadhaar No.", value: "XXXX XXXX 5549" },
+      { label: "DOB", value: "01 Jul 2007" },
     ],
   },
   {
@@ -75,8 +75,9 @@ export const vaultDocs: VaultDoc[] = [
     versions: 1,
     tags: ["KYC"],
     extracted: [
-      { label: "PAN", value: "ABCDE1234F" },
-      { label: "Name", value: "Aarav Mehta" },
+      { label: "PAN", value: "BHARN1234K" },
+      { label: "Name", value: "Bharanidharan Saravanakumar" },
+      { label: "DOB", value: "01 Jul 2007" },
     ],
   },
   {

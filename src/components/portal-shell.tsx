@@ -122,7 +122,7 @@ const navs: Record<Role, { group: string; items: NavItem[] }[]> = {
 };
 
 const roleMeta: Record<Role, { name: string; who: string; initials: string }> = {
-  customer: { name: "Customer Portal", who: "Aarav Mehta", initials: "AM" },
+  customer: { name: "Customer Portal", who: "Bharanidharan Saravanakumar", initials: "BS" },
   employee: { name: "Employee Portal", who: "Priya Verma · Ops", initials: "PV" },
   manager: { name: "Manager Portal", who: "Daniel Cole · VP Ops", initials: "DC" },
 };
