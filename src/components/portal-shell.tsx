@@ -176,7 +176,7 @@ export function PortalShell({
   const meta = roleMeta[role];
   const groups = useMemo(() => navs[role], [role]);
   // Auth and navigation helpers
-  const { logout } = useAuth();
+  const { logout, user } = useAuth();
   const router = useRouter();
 
   useEffect(() => {
@@ -356,9 +356,11 @@ export function PortalShell({
                 </div>
                 <div className="ml-1 flex items-center gap-2 rounded-xl border border-border/70 bg-card/60 py-1 pl-1 pr-3">
                   <span className="grid size-7 place-items-center rounded-lg bg-brand text-[11px] font-semibold text-white">
-                    {meta.initials}
+                    {user?.first_name ? `${user.first_name[0]}${user.last_name ? user.last_name[0] : ""}`.toUpperCase() : meta.initials}
                   </span>
-                  <span className="hidden text-xs font-medium sm:block">{meta.who}</span>
+                  <span className="hidden text-xs font-medium sm:block">
+                    {user?.first_name ? `${user.first_name} ${user.last_name || ""}` : meta.who}
+                  </span>
                   {/* Logout button */}
                   <button
                     onClick={async () => {

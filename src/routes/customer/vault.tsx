@@ -1,6 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { AnimatePresence, motion } from "motion/react";
-import { useMemo, useState, useRef, useCallback } from "react";
+import { useMemo, useState, useRef, useCallback, useEffect } from "react";
 import {
   AlertTriangle,
   ChevronRight,
@@ -31,7 +31,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Progress } from "@/components/ui/progress";
-import { expiryTimeline, healthMeta, readiness, vaultCategories, vaultDocs, type VaultDoc } from "@/lib/finpilot-data";
+import { healthMeta, vaultCategories, type VaultDoc } from "@/lib/finpilot-data";
 import { cn } from "@/lib/utils";
 
 export const Route = createFileRoute("/customer/vault")({
@@ -173,6 +173,16 @@ function VaultPage() {
 
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [customDocs, setCustomDocs] = useState<VaultDoc[]>([]);
+  const [dbDocs, setDbDocs] = useState<VaultDoc[]>([]);
+  const [dbLoading, setDbLoading] = useState(true);
+
+  // Load vault docs from Supabase on mount
+  useEffect(() => {
+    documentService.listVaultDocs().then((docs) => {
+      setDbDocs(docs);
+      setDbLoading(false);
+    }).catch(() => setDbLoading(false));
+  }, []);
 
   const getItemExtractedFields = (doc: VaultDoc) => {
     if (editedFieldsMap[doc.id]) return editedFieldsMap[doc.id];
@@ -293,7 +303,7 @@ startxref
   };
 
   const docs = useMemo(() => {
-    const combined = [...customDocs, ...vaultDocs];
+    const combined = [...customDocs, ...dbDocs];
     return combined.filter((d) => {
       const matchCat =
         filter === "all" ||
@@ -305,7 +315,7 @@ startxref
         d.tags.some((t) => t.toLowerCase().includes(query.toLowerCase()));
       return matchCat && matchQ && filter !== "trash";
     });
-  }, [filter, query, customDocs]);
+  }, [filter, query, customDocs, dbDocs]);
 
   const startUpload = async (file?: File) => {
     setUploading(true);
@@ -400,7 +410,7 @@ startxref
               </p>
               <ul className="space-y-1">
                 <li>
-                  <FolderButton active={filter === "all"} onClick={() => setFilter("all")} label="All Documents" count={vaultDocs.length} icon={Vault} />
+                  <FolderButton active={filter === "all"} onClick={() => setFilter("all")} label="All Documents" count={[...customDocs, ...dbDocs].length} icon={Vault} />
                 </li>
                 {vaultCategories.map((c) => (
                   <li key={c.id}>
@@ -671,7 +681,11 @@ startxref
                   <div className="flex items-center gap-4">
                     <ProgressRing value={92} size={104} label="Overall" />
                     <ul className="flex-1 space-y-2">
-                      {readiness.map((r) => (
+                      {[
+                        { label: "Identity & KYC", value: 100 },
+                        { label: "Address Proof", value: 100 },
+                        { label: "Income Verification", value: 92 },
+                      ].map((r) => (
                         <li key={r.label} className="flex items-center gap-2 text-xs">
                           <span
                             className={cn(
@@ -693,24 +707,40 @@ startxref
                     action={<StatusPill tone="warning">4 Need Renewal</StatusPill>}
                   />
                   <ul className="space-y-2">
-                    {expiryTimeline.map((e) => (
-                      <li
-                        key={e.doc}
-                        className="flex flex-wrap items-center gap-3 rounded-xl border border-border/70 bg-card/50 px-3 py-2.5"
-                      >
-                        <span className={cn("size-2 shrink-0 rounded-full", healthMeta[e.health].dot)} />
-                        <div className="min-w-0 flex-1">
-                          <p className="truncate text-sm font-semibold">{e.doc}</p>
-                          <p className="truncate text-[11px] text-muted-foreground">May affect: {e.impact}</p>
-                        </div>
-                        <StatusPill tone={e.days < 0 ? "danger" : e.days <= 10 ? "warning" : "info"}>
-                          {e.days < 0 ? `Expired ${-e.days}d ago` : `${e.days} days left`}
-                        </StatusPill>
-                        <Button size="sm" variant="ghost" className="rounded-lg text-xs">
-                          Remind me
-                        </Button>
+                    {[...customDocs, ...dbDocs].filter((d) => d.expires).map((e) => {
+                      const expiresDate = e.expires ? new Date(e.expires) : null;
+                      const daysLeft = expiresDate ? Math.round((expiresDate.getTime() - Date.now()) / 86400000) : 0;
+                      const impactMap: Record<string, string> = {
+                        identity: "KYC, loan applications",
+                        address: "Address verification",
+                        income: "Income assessment",
+                        banking: "Bank underwriting",
+                        insurance: "Medical claim eligibility",
+                      };
+                      return (
+                        <li
+                          key={e.id}
+                          className="flex flex-wrap items-center gap-3 rounded-xl border border-border/70 bg-card/50 px-3 py-2.5"
+                        >
+                          <span className={cn("size-2 shrink-0 rounded-full", healthMeta[e.health].dot)} />
+                          <div className="min-w-0 flex-1">
+                            <p className="truncate text-sm font-semibold">{e.name}</p>
+                            <p className="truncate text-[11px] text-muted-foreground">May affect: {impactMap[e.category] ?? "Loan processing"}</p>
+                          </div>
+                          <StatusPill tone={daysLeft < 0 ? "danger" : daysLeft <= 10 ? "warning" : "info"}>
+                            {daysLeft < 0 ? `Expired ${-daysLeft}d ago` : `${daysLeft} days left`}
+                          </StatusPill>
+                          <Button size="sm" variant="ghost" className="rounded-lg text-xs">
+                            Remind me
+                          </Button>
+                        </li>
+                      );
+                    })}
+                    {[...customDocs, ...dbDocs].filter((d) => d.expires).length === 0 && (
+                      <li className="py-6 text-center text-sm text-muted-foreground">
+                        No documents expiring soon
                       </li>
-                    ))}
+                    )}
                   </ul>
                 </GlassPanel>
               </div>

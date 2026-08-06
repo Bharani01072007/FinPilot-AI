@@ -15,8 +15,24 @@ import {
 import { PortalShell } from "@/components/portal-shell";
 import { Button } from "@/components/ui/button";
 import { reportService } from "@/lib/services/report-service";
-import { revenueSeries, slaSeries } from "@/lib/finpilot-data";
 import { toast } from "sonner";
+
+const revenueSeries = [
+  { m: "Jan", disbursed: 12, applications: 40, risk: 2 },
+  { m: "Feb", disbursed: 19, applications: 55, risk: 3 },
+  { m: "Mar", disbursed: 28, applications: 72, risk: 1 },
+  { m: "Apr", disbursed: 34, applications: 88, risk: 4 },
+  { m: "May", disbursed: 42, applications: 110, risk: 2 },
+  { m: "Jun", disbursed: 68, applications: 145, risk: 2 },
+];
+
+const slaSeries = [
+  { m: "Mon", sla: 98 },
+  { m: "Tue", sla: 99 },
+  { m: "Wed", sla: 97 },
+  { m: "Thu", sla: 99 },
+  { m: "Fri", sla: 100 },
+];
 
 export const Route = createFileRoute("/manager/analytics")({
   head: () => ({

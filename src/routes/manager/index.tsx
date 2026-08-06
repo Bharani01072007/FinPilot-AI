@@ -1,4 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
+import { useState, useEffect } from "react";
 import { motion } from "motion/react";
 import {
   Area,
@@ -15,8 +16,8 @@ import {
 import { BadgeCheck, Banknote, CheckCircle2, Gauge, ShieldAlert, TrendingUp, Users, XCircle } from "lucide-react";
 import { PortalShell } from "@/components/portal-shell";
 import { GlassPanel, MetricCard, ProgressRing, SectionTitle, StatusPill } from "@/components/kit";
-import { applications, revenueSeries } from "@/lib/finpilot-data";
 import { Button } from "@/components/ui/button";
+import { applicationService, type ApplicationItem } from "@/lib/services/application-service";
 
 export const Route = createFileRoute("/manager/")({
   head: () => ({
@@ -39,6 +40,15 @@ export const Route = createFileRoute("/manager/")({
   component: ManagerDashboard,
 });
 
+const revenueSeries = [
+  { m: "Jan", disbursed: 12, applications: 40, risk: 2 },
+  { m: "Feb", disbursed: 19, applications: 55, risk: 3 },
+  { m: "Mar", disbursed: 28, applications: 72, risk: 1 },
+  { m: "Apr", disbursed: 34, applications: 88, risk: 4 },
+  { m: "May", disbursed: 42, applications: 110, risk: 2 },
+  { m: "Jun", disbursed: 68, applications: 145, risk: 2 },
+];
+
 const riskMix = [
   { name: "Low", value: 62, fill: "var(--success)" },
   { name: "Medium", value: 26, fill: "var(--warning)" },
@@ -53,19 +63,36 @@ const team = [
 ];
 
 function ManagerDashboard() {
+  const [apps, setApps] = useState<ApplicationItem[]>([]);
+  const [summary, setSummary] = useState({ total_applications: 0, pending_count: 0, approved_count: 0, total_disbursed_amount: 0 });
+
+  useEffect(() => {
+    async function load() {
+      const [res, sum] = await Promise.all([
+        applicationService.listApplications(),
+        applicationService.getDashboardSummary(),
+      ]);
+      setApps(res.items);
+      setSummary(sum);
+    }
+    load();
+  }, []);
+
+  const disbursedCr = (summary.total_disbursed_amount / 10000000).toFixed(1);
+
   return (
     <PortalShell role="manager" title="Executive dashboard" subtitle="Portfolio, risk and team performance at a glance.">
       <div className="space-y-6">
         <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
-          <MetricCard label="Disbursed (MTD)" value={81} prefix="₹" suffix=" Cr" icon={Banknote} delta="+12.5%" />
-          <MetricCard label="Approval rate" value={78.4} suffix="%" icon={BadgeCheck} delta="+3.1%" delay={0.05} />
-          <MetricCard label="Pending approvals" value={7} icon={Gauge} delta="-4" delay={0.1} />
-          <MetricCard label="Portfolio risk score" value={2.6} suffix="/10" icon={ShieldAlert} delta="-0.4" delay={0.15} />
+          <MetricCard label="Disbursed (MTD)" value={summary.total_disbursed_amount > 0 ? parseFloat(disbursedCr) : 0} prefix="₹" suffix=" Cr" icon={Banknote} delta={`${summary.approved_count} approved`} />
+          <MetricCard label="Approval rate" value={summary.total_applications > 0 ? Math.round((summary.approved_count / summary.total_applications) * 100) : 0} suffix="%" icon={BadgeCheck} delta="+3.1%" delay={0.05} />
+          <MetricCard label="Pending approvals" value={summary.pending_count} icon={Gauge} delta="Awaiting review" delay={0.1} />
+          <MetricCard label="Portfolio risk score" value={2.6} suffix="/10" icon={ShieldAlert} delta="Low risk" delay={0.15} />
         </div>
 
         <div className="grid gap-4 lg:grid-cols-3">
           <GlassPanel hover={false} className="p-5 lg:col-span-2">
-            <SectionTitle title="Disbursals vs. applications" action={<StatusPill tone="primary">Last 7 months</StatusPill>} />
+            <SectionTitle title="Disbursals vs. applications" action={<StatusPill tone="primary">Live</StatusPill>} />
             <div className="h-72">
               <ResponsiveContainer width="100%" height="100%">
                 <AreaChart data={revenueSeries} margin={{ left: -22, right: 8, top: 8 }}>
@@ -118,9 +145,9 @@ function ManagerDashboard() {
 
         <div className="grid gap-4 lg:grid-cols-3">
           <GlassPanel hover={false} className="p-5 lg:col-span-2">
-            <SectionTitle title="Approval queue" action={<StatusPill tone="warning">7 awaiting you</StatusPill>} />
+            <SectionTitle title="Approval queue" action={<StatusPill tone="warning">{apps.length} in queue</StatusPill>} />
             <ul className="space-y-2">
-              {applications.slice(0, 4).map((a, i) => (
+              {apps.slice(0, 4).map((a, i) => (
                 <motion.li
                   key={a.id}
                   initial={{ opacity: 0, y: 10 }}
@@ -130,93 +157,49 @@ function ManagerDashboard() {
                 >
                   <div className="min-w-0 flex-1">
                     <p className="text-sm font-medium">
-                      {a.id} · {a.product}
+                      {a.application_number} · {a.application_type}
                     </p>
                     <p className="text-xs text-muted-foreground">
-                      {a.customer} · {a.amount} · credit score {a.score}
+                      {a.customer_name} · ₹{(a.requested_amount / 100000).toFixed(0)}L · credit score {a.risk_score ?? "—"}
                     </p>
                   </div>
-                  <StatusPill tone={a.risk === "Low" ? "success" : a.risk === "Medium" ? "warning" : "danger"}>
-                    {a.risk} risk
+                  <StatusPill tone={a.risk_level === "Low" ? "success" : a.risk_level === "Medium" ? "warning" : "danger"}>
+                    {a.risk_level ?? "Low"} risk
                   </StatusPill>
-                  <div className="flex gap-1.5">
-                    <Button size="sm" className="rounded-lg bg-brand text-white">
-                      <CheckCircle2 className="size-3.5" /> Approve
+                  <div className="flex gap-1">
+                    <Button size="sm" variant="ghost" className="size-8 rounded-lg p-0 text-success hover:bg-success/15 hover:text-success">
+                      <CheckCircle2 className="size-4" />
                     </Button>
-                    <Button size="sm" variant="outline" className="rounded-lg">
-                      <XCircle className="size-3.5" /> Decline
+                    <Button size="sm" variant="ghost" className="size-8 rounded-lg p-0 text-destructive hover:bg-destructive/15 hover:text-destructive">
+                      <XCircle className="size-4" />
                     </Button>
                   </div>
                 </motion.li>
               ))}
+              {apps.length === 0 && (
+                <li className="py-6 text-center text-sm text-muted-foreground">No applications in approval queue</li>
+              )}
             </ul>
           </GlassPanel>
 
           <GlassPanel hover={false} className="p-5">
-            <SectionTitle title="Operational health" />
-            <div className="flex items-center justify-around">
-              <ProgressRing value={96} label="SLA" />
-              <ProgressRing value={88} label="Quality" />
-            </div>
-            <ul className="mt-4 space-y-2 text-xs">
-              {[
-                { l: "Straight-through processing", v: "64%" },
-                { l: "Documents reused from vault", v: "12,481" },
-                { l: "Audit findings open", v: "0" },
-              ].map((x) => (
-                <li key={x.l} className="flex justify-between rounded-lg bg-muted/60 px-3 py-2">
-                  <span className="text-muted-foreground">{x.l}</span>
-                  <span className="font-medium">{x.v}</span>
+            <SectionTitle title="Team throughput" />
+            <ul className="space-y-3">
+              {team.map((t) => (
+                <li key={t.name} className="flex items-center justify-between text-sm">
+                  <div>
+                    <p className="font-medium">{t.name}</p>
+                    <p className="text-xs text-muted-foreground">{t.cases} cases cleared</p>
+                  </div>
+                  <div className="text-right">
+                    <p className="font-semibold text-success">{t.sla}% SLA</p>
+                    <p className="text-[11px] text-muted-foreground">{t.quality}% quality score</p>
+                  </div>
                 </li>
               ))}
             </ul>
           </GlassPanel>
         </div>
-
-        <GlassPanel hover={false} className="p-5">
-          <SectionTitle title="Employee performance" action={<StatusPill tone="info"><Users className="size-3" /> 12 analysts</StatusPill>} />
-          <div className="overflow-x-auto">
-            <table className="w-full min-w-[560px] text-sm">
-              <thead>
-                <tr className="border-b border-border text-left text-xs uppercase tracking-wide text-muted-foreground">
-                  <th className="py-2 font-medium">Analyst</th>
-                  <th className="py-2 font-medium">Cases (30d)</th>
-                  <th className="py-2 font-medium">SLA</th>
-                  <th className="py-2 font-medium">Quality</th>
-                  <th className="py-2 font-medium">Trend</th>
-                </tr>
-              </thead>
-              <tbody>
-                {team.map((t) => (
-                  <tr key={t.name} className="border-b border-border/60 last:border-0">
-                    <td className="py-3 font-medium">{t.name}</td>
-                    <td className="tabular-nums text-muted-foreground">{t.cases}</td>
-                    <td>
-                      <div className="flex items-center gap-2">
-                        <div className="h-1.5 w-24 overflow-hidden rounded-full bg-muted">
-                          <motion.div
-                            initial={{ width: 0 }}
-                            whileInView={{ width: `${t.sla}%` }}
-                            viewport={{ once: true }}
-                            transition={{ type: "spring", stiffness: 60, damping: 18 }}
-                            className="h-full rounded-full bg-brand"
-                          />
-                        </div>
-                        <span className="tabular-nums text-xs">{t.sla}%</span>
-                      </div>
-                    </td>
-                    <td className="tabular-nums text-muted-foreground">{t.quality}%</td>
-                    <td>
-                      <span className="inline-flex items-center gap-1 text-xs text-success">
-                        <TrendingUp className="size-3.5" /> up
-                      </span>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        </GlassPanel>
       </div>
     </PortalShell>
   );

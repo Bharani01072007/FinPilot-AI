@@ -1,21 +1,30 @@
+/**
+ * FinPilot AI — Application Service
+ * All data fetched live from Supabase. No mock fallbacks.
+ */
+
+import { supabase } from "../supabase";
 import { fetchApi } from "../api-client";
-import { applications as mockApplications, activity as mockActivity } from "../finpilot-data";
 
 export interface ApplicationItem {
   id: string;
   application_number: string;
   customer_name: string;
+  customer_email?: string;
   customer_id?: string;
   application_type: string;
   requested_amount: number;
+  sanctioned_amount?: number;
   status: string;
   priority: string;
-  assigned_employee_id?: string;
-  assigned_employee_name?: string;
-  created_at: string;
-  updated_at: string;
   risk_score?: number;
   risk_level?: string;
+  dti_ratio?: number;
+  assigned_employee_id?: string;
+  assigned_employee_name?: string;
+  remarks?: string;
+  created_at: string;
+  updated_at: string;
 }
 
 export interface ApplicationDashboardSummary {
@@ -28,20 +37,58 @@ export interface ApplicationDashboardSummary {
   total_disbursed_amount: number;
 }
 
+function mapRiskLevel(score?: number): string {
+  if (!score) return "Unknown";
+  if (score >= 750) return "Low";
+  if (score >= 650) return "Medium";
+  return "High";
+}
+
+function mapPriority(risk?: string): string {
+  if (risk === "High") return "HIGH";
+  if (risk === "Medium") return "MEDIUM";
+  return "LOW";
+}
+
 export const applicationService = {
   async getDashboardSummary(): Promise<ApplicationDashboardSummary> {
-    const res = await fetchApi<ApplicationDashboardSummary>("/applications/dashboard/summary");
-    if (res.success && res.data) {
-      return res.data;
+    const { data, error } = await supabase
+      .from("applications")
+      .select("status, sanctioned_amount, requested_amount");
+
+    if (!error && data) {
+      const total = data.length;
+      const pending = data.filter((a) => a.status === "SUBMITTED" || a.status === "DOCUMENT_PENDING").length;
+      const underwriting = data.filter((a) => a.status === "UNDER_REVIEW").length;
+      const approved = data.filter((a) => a.status === "APPROVED" || a.status === "COMPLETED").length;
+      const rejected = data.filter((a) => a.status === "REJECTED").length;
+      const totalDisbursed = data
+        .filter((a) => a.status === "APPROVED" || a.status === "COMPLETED")
+        .reduce((sum, a) => sum + (Number(a.sanctioned_amount) || Number(a.requested_amount) || 0), 0);
+
+      return {
+        total_applications: total,
+        pending_count: pending,
+        underwriting_count: underwriting,
+        approved_count: approved,
+        rejected_count: rejected,
+        sla_breached_count: 0, // would need SLA timestamps
+        total_disbursed_amount: totalDisbursed,
+      };
     }
+
+    // Fallback to backend API
+    const res = await fetchApi<ApplicationDashboardSummary>("/applications/dashboard/summary");
+    if (res.success && res.data) return res.data;
+
     return {
-      total_applications: 1248,
-      pending_count: 18,
-      underwriting_count: 42,
-      approved_count: 1120,
-      rejected_count: 68,
-      sla_breached_count: 3,
-      total_disbursed_amount: 81000000,
+      total_applications: 0,
+      pending_count: 0,
+      underwriting_count: 0,
+      approved_count: 0,
+      rejected_count: 0,
+      sla_breached_count: 0,
+      total_disbursed_amount: 0,
     };
   },
 
@@ -49,62 +96,111 @@ export const applicationService = {
     search?: string;
     status?: string;
     application_type?: string;
+    user_id?: string;
     page?: number;
   }): Promise<{ items: ApplicationItem[]; total: number }> {
-    const query = new URLSearchParams();
-    if (params?.search) query.append("search", params.search);
-    if (params?.status) query.append("status", params.status);
-    if (params?.application_type) query.append("application_type", params.application_type);
-    if (params?.page) query.append("page", params.page.toString());
+    let query = supabase
+      .from("applications")
+      .select(`
+        *,
+        users!applications_user_id_fkey(first_name, last_name, email),
+        assigned:users!applications_assigned_officer_id_fkey(first_name, last_name)
+      `)
+      .order("created_at", { ascending: false });
 
-    const res = await fetchApi<{ items: ApplicationItem[]; total: number }>(`/applications?${query.toString()}`);
-    if (res.success && res.data?.items) {
-      return res.data;
+    if (params?.status) query = query.eq("status", params.status);
+    if (params?.application_type) query = query.ilike("application_type", `%${params.application_type}%`);
+    if (params?.user_id) query = query.eq("user_id", params.user_id);
+    if (params?.search) {
+      query = query.or(
+        `application_number.ilike.%${params.search}%,application_type.ilike.%${params.search}%`
+      );
     }
 
-    // Map mock data fallback
-    const mappedMock: ApplicationItem[] = mockApplications.map((app, idx) => ({
-      id: app.id,
-      application_number: app.id,
-      customer_name: app.customer,
-      application_type: app.product,
-      requested_amount: parseInt(app.amount.replace(/[^0-9]/g, "")) || 5000000,
-      status: app.stage,
-      priority: app.risk === "High" ? "HIGH" : app.risk === "Medium" ? "MEDIUM" : "LOW",
-      created_at: new Date(Date.now() - idx * 86400000 * 2).toISOString(),
-      updated_at: new Date(Date.now() - idx * 3600000).toISOString(),
-      risk_score: app.score,
-      risk_level: app.risk,
-    }));
+    const { data, error } = await query;
 
-    return {
-      items: mappedMock,
-      total: mappedMock.length,
-    };
+    if (!error && data) {
+      const items: ApplicationItem[] = data.map((a: any) => {
+        const riskLevel = mapRiskLevel(a.risk_score);
+        return {
+          id: a.id,
+          application_number: a.application_number,
+          customer_name: a.users ? `${a.users.first_name} ${a.users.last_name}` : "Unknown",
+          customer_email: a.users?.email,
+          customer_id: a.user_id,
+          application_type: a.application_type,
+          requested_amount: Number(a.requested_amount),
+          sanctioned_amount: a.sanctioned_amount ? Number(a.sanctioned_amount) : undefined,
+          status: a.status,
+          priority: mapPriority(riskLevel),
+          risk_score: a.risk_score ?? undefined,
+          risk_level: riskLevel,
+          dti_ratio: a.dti_ratio ? Number(a.dti_ratio) : undefined,
+          assigned_employee_id: a.assigned_officer_id ?? undefined,
+          assigned_employee_name: a.assigned
+            ? `${a.assigned.first_name} ${a.assigned.last_name}`
+            : undefined,
+          remarks: a.remarks ?? undefined,
+          created_at: a.created_at,
+          updated_at: a.updated_at,
+        };
+      });
+      return { items, total: items.length };
+    }
+
+    // Fallback to backend API
+    const searchQuery = new URLSearchParams();
+    if (params?.search) searchQuery.append("search", params.search);
+    if (params?.status) searchQuery.append("status", params.status);
+    if (params?.application_type) searchQuery.append("application_type", params.application_type);
+    if (params?.page) searchQuery.append("page", params.page.toString());
+
+    const res = await fetchApi<{ items: ApplicationItem[]; total: number }>(
+      `/applications?${searchQuery.toString()}`
+    );
+    return res.success && res.data?.items ? res.data : { items: [], total: 0 };
   },
 
   async getApplicationById(id: string): Promise<ApplicationItem | null> {
-    const res = await fetchApi<ApplicationItem>(`/applications/${id}`);
-    if (res.success && res.data) {
-      return res.data;
-    }
-    const match = mockApplications.find((a) => a.id === id);
-    if (match) {
+    const { data, error } = await supabase
+      .from("applications")
+      .select(`
+        *,
+        users!applications_user_id_fkey(first_name, last_name, email),
+        assigned:users!applications_assigned_officer_id_fkey(first_name, last_name)
+      `)
+      .eq("id", id)
+      .single();
+
+    if (!error && data) {
+      const a = data as any;
+      const riskLevel = mapRiskLevel(a.risk_score);
       return {
-        id: match.id,
-        application_number: match.id,
-        customer_name: match.customer,
-        application_type: match.product,
-        requested_amount: parseInt(match.amount.replace(/[^0-9]/g, "")) || 5000000,
-        status: match.stage,
-        priority: match.risk === "High" ? "HIGH" : "MEDIUM",
-        created_at: new Date().toISOString(),
-        updated_at: new Date().toISOString(),
-        risk_score: match.score,
-        risk_level: match.risk,
+        id: a.id,
+        application_number: a.application_number,
+        customer_name: a.users ? `${a.users.first_name} ${a.users.last_name}` : "Unknown",
+        customer_email: a.users?.email,
+        customer_id: a.user_id,
+        application_type: a.application_type,
+        requested_amount: Number(a.requested_amount),
+        sanctioned_amount: a.sanctioned_amount ? Number(a.sanctioned_amount) : undefined,
+        status: a.status,
+        priority: mapPriority(riskLevel),
+        risk_score: a.risk_score ?? undefined,
+        risk_level: riskLevel,
+        dti_ratio: a.dti_ratio ? Number(a.dti_ratio) : undefined,
+        assigned_employee_id: a.assigned_officer_id ?? undefined,
+        assigned_employee_name: a.assigned
+          ? `${a.assigned.first_name} ${a.assigned.last_name}`
+          : undefined,
+        remarks: a.remarks ?? undefined,
+        created_at: a.created_at,
+        updated_at: a.updated_at,
       };
     }
-    return null;
+
+    const res = await fetchApi<ApplicationItem>(`/applications/${id}`);
+    return res.success && res.data ? res.data : null;
   },
 
   async createApplication(data: {
@@ -112,27 +208,12 @@ export const applicationService = {
     application_type: string;
     requested_amount: number;
     notes?: string;
-  }): Promise<ApplicationItem> {
+  }): Promise<ApplicationItem | null> {
     const res = await fetchApi<ApplicationItem>("/applications", {
       method: "POST",
       body: JSON.stringify(data),
     });
-    if (res.success && res.data) {
-      return res.data;
-    }
-    return {
-      id: `APP-${Math.floor(10000 + Math.random() * 90000)}`,
-      application_number: `APP-${Math.floor(10000 + Math.random() * 90000)}`,
-      customer_name: data.customer_name,
-      application_type: data.application_type,
-      requested_amount: data.requested_amount,
-      status: "Submitted",
-      priority: "MEDIUM",
-      created_at: new Date().toISOString(),
-      updated_at: new Date().toISOString(),
-      risk_score: 750,
-      risk_level: "Low",
-    };
+    return res.success && res.data ? res.data : null;
   },
 
   async transitionStatus(id: string, newStatus: string, remarks?: string): Promise<boolean> {
@@ -151,16 +232,45 @@ export const applicationService = {
     return res.success;
   },
 
-  async getStatusHistory(id: string) {
-    const res = await fetchApi<any[]>(`/applications/${id}/history`);
-    if (res.success && res.data) {
-      return res.data;
+  async getStatusHistory(id: string): Promise<{ id: string; status: string; remarks?: string; created_at: string; changed_by_name?: string }[]> {
+    const { data, error } = await supabase
+      .from("application_status_history")
+      .select("*, users(first_name, last_name)")
+      .eq("application_id", id)
+      .order("created_at", { ascending: false });
+
+    if (!error && data) {
+      return data.map((h: any) => ({
+        id: h.id,
+        status: h.status,
+        remarks: h.remarks,
+        created_at: h.created_at,
+        changed_by_name: h.users ? `${h.users.first_name} ${h.users.last_name}` : undefined,
+      }));
     }
-    return mockActivity.map((act, i) => ({
-      id: `hist-${i}`,
-      status: act.title,
-      remarks: act.meta,
-      created_at: new Date(Date.now() - i * 3600000 * 2).toISOString(),
-    }));
+
+    const res = await fetchApi<any[]>(`/applications/${id}/history`);
+    return res.success && res.data ? res.data : [];
+  },
+
+  async getMonthlyTrend(): Promise<{ month: string; submitted: number; approved: number; rejected: number }[]> {
+    const { data } = await supabase
+      .from("applications")
+      .select("created_at, status")
+      .gte("created_at", new Date(Date.now() - 180 * 86400000).toISOString())
+      .order("created_at");
+
+    if (data?.length) {
+      const monthMap: Record<string, { submitted: number; approved: number; rejected: number }> = {};
+      for (const row of data) {
+        const m = new Date(row.created_at).toLocaleString("en-GB", { month: "short" });
+        if (!monthMap[m]) monthMap[m] = { submitted: 0, approved: 0, rejected: 0 };
+        monthMap[m].submitted += 1;
+        if (row.status === "APPROVED" || row.status === "COMPLETED") monthMap[m].approved += 1;
+        if (row.status === "REJECTED") monthMap[m].rejected += 1;
+      }
+      return Object.entries(monthMap).map(([month, v]) => ({ month, ...v }));
+    }
+    return [];
   },
 };

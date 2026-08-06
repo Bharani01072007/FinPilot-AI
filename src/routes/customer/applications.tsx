@@ -133,7 +133,9 @@ function CustomerApplicationsPage() {
         application_type: appName,
         requested_amount: parseFloat(appAmount) || 1000000,
       });
-      toast.success(`Application ${newApp.application_number} submitted successfully!`);
+      if (newApp) {
+        toast.success(`Application ${newApp.application_number} submitted successfully!`);
+      }
       setOpenNewDialog(false);
       loadData();
     } catch {
@@ -153,7 +155,9 @@ function CustomerApplicationsPage() {
         requested_amount: 6500000,
       });
       setSfSubmitted(true);
-      toast.success(`AI Smart Form pre-approval generated for ${newApp.application_number}!`);
+      if (newApp) {
+        toast.success(`AI Smart Form pre-approval generated for ${newApp.application_number}!`);
+      }
       loadData();
     } catch {
       toast.error("Smart form submission failed");

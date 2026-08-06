@@ -1,86 +1,111 @@
+/**
+ * FinPilot AI — Notification Service
+ * All data fetched live from Supabase. No mock fallbacks.
+ */
+
+import { supabase } from "../supabase";
 import { fetchApi } from "../api-client";
 
 export interface NotificationItem {
   id: string;
   title: string;
   message: string;
-  notification_type: "SYSTEM" | "APPLICATION" | "VAULT" | "SECURITY";
+  notification_type: "SYSTEM" | "APPLICATION" | "DOCUMENT" | "VAULT" | "SECURITY" | "PAYMENT" | "REMINDER";
   is_read: boolean;
   priority: "LOW" | "MEDIUM" | "HIGH";
   created_at: string;
 }
 
+function inferPriority(type: string): "LOW" | "MEDIUM" | "HIGH" {
+  if (type === "SYSTEM" || type === "APPLICATION") return "HIGH";
+  if (type === "DOCUMENT") return "MEDIUM";
+  return "LOW";
+}
+
 export const notificationService = {
-  async getUnreadCount(): Promise<number> {
+  async getUnreadCount(userId?: string): Promise<number> {
+    let query = supabase
+      .from("notifications")
+      .select("id", { count: "exact", head: true })
+      .eq("is_read", false);
+
+    if (userId) query = query.eq("user_id", userId);
+
+    const { count } = await query;
+    if (count !== null) return count;
+
+    // Fallback to backend API
     const res = await fetchApi<{ count: number }>("/notifications/unread-count");
-    if (res.success && typeof res.data?.count === "number") {
-      return res.data.count;
-    }
-    return 3;
+    return res.success && typeof res.data?.count === "number" ? res.data.count : 0;
   },
 
-  async listNotifications(): Promise<NotificationItem[]> {
-    const res = await fetchApi<{ items: NotificationItem[] }>("/notifications");
-    if (res.success && res.data?.items) {
-      return res.data.items;
+  async listNotifications(userId?: string): Promise<NotificationItem[]> {
+    let query = supabase
+      .from("notifications")
+      .select("*")
+      .order("created_at", { ascending: false })
+      .limit(50);
+
+    if (userId) query = query.eq("user_id", userId);
+
+    const { data, error } = await query;
+
+    if (!error && data?.length) {
+      return data.map((n) => ({
+        id: n.id,
+        title: n.title,
+        message: n.message,
+        notification_type: (n.type as NotificationItem["notification_type"]) ?? "SYSTEM",
+        is_read: n.is_read,
+        priority: inferPriority(n.type ?? "SYSTEM"),
+        created_at: n.created_at,
+      }));
     }
-    return [
-      {
-        id: "n1",
-        title: "Driving License expires in 20 days",
-        message: "Your Driving License stored in the Document Vault will expire soon. Please upload a renewed copy to prevent delays.",
-        notification_type: "VAULT",
-        is_read: false,
-        priority: "HIGH",
-        created_at: new Date(Date.now() - 120000).toISOString(),
-      },
-      {
-        id: "n2",
-        title: "APP-24817 moved to Underwriting",
-        message: "Home Loan Application APP-24817 has passed automated KYC & risk scoring and is now with the underwriting officer.",
-        notification_type: "APPLICATION",
-        is_read: false,
-        priority: "MEDIUM",
-        created_at: new Date(Date.now() - 18 * 60000).toISOString(),
-      },
-      {
-        id: "n3",
-        title: "New consent request from Underwriting",
-        message: "Underwriting officer requested consent to pull latest bank statement from your connected HDFC account.",
-        notification_type: "SECURITY",
-        is_read: false,
-        priority: "HIGH",
-        created_at: new Date(Date.now() - 3600000).toISOString(),
-      },
-      {
-        id: "n4",
-        title: "Form-16 OCR extraction verified",
-        message: "Vault AI successfully parsed 14 fields with 99.4% confidence rating.",
-        notification_type: "VAULT",
-        is_read: true,
-        priority: "LOW",
-        created_at: new Date(Date.now() - 86400000).toISOString(),
-      },
-    ];
+
+    // Fallback to backend API
+    const res = await fetchApi<{ items: NotificationItem[] }>("/notifications");
+    return res.success && res.data?.items ? res.data.items : [];
   },
 
   async markAsRead(id: string): Promise<boolean> {
+    const { error } = await supabase
+      .from("notifications")
+      .update({ is_read: true })
+      .eq("id", id);
+
+    if (!error) return true;
+
     const res = await fetchApi(`/notifications/${id}/read`, { method: "PATCH" });
     return res.success;
   },
 
-  async markAllAsRead(): Promise<boolean> {
-    const res = await fetchApi(`/notifications/read-all`, { method: "PATCH" });
+  async markAllAsRead(userId?: string): Promise<boolean> {
+    let query = supabase.from("notifications").update({ is_read: true });
+    if (userId) query = query.eq("user_id", userId);
+
+    const { error } = await query.eq("is_read", false);
+    if (!error) return true;
+
+    const res = await fetchApi("/notifications/read-all", { method: "PATCH" });
     return res.success;
   },
 
   async archive(id: string): Promise<boolean> {
+    const { error } = await supabase.from("notifications").delete().eq("id", id);
+    if (!error) return true;
+
     const res = await fetchApi(`/notifications/${id}/archive`, { method: "PATCH" });
     return res.success;
   },
 
-  async clearAll(): Promise<boolean> {
-    const res = await fetchApi(`/notifications`, { method: "DELETE" });
+  async clearAll(userId?: string): Promise<boolean> {
+    let query = supabase.from("notifications").delete();
+    if (userId) query = query.eq("user_id", userId);
+
+    const { error } = await query.eq("is_read", true);
+    if (!error) return true;
+
+    const res = await fetchApi("/notifications", { method: "DELETE" });
     return res.success;
   },
 };
