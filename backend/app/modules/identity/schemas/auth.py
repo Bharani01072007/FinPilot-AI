@@ -42,6 +42,7 @@ class UserRegisterRequest(BaseModel):
     last_name: str = Field(..., min_length=1, max_length=100, description="User last name")
     phone: Optional[str] = Field(default=None, description="Optional phone number")
     password: str = Field(..., description="Plain password conforming to 12-character security policy")
+    role: Optional[str] = Field(default="customer", description="Target role (customer, employee, manager)")
 
     @field_validator("password")
     @classmethod
@@ -56,6 +57,21 @@ class UserLoginRequest(BaseModel):
     password: str = Field(..., description="User account password")
 
 
+class Verify2FARequest(BaseModel):
+    """2FA OTP verification request model."""
+
+    email: EmailStr = Field(..., description="Registered email address")
+    otp_code: str = Field(..., min_length=4, max_length=10, description="Issued 6-digit OTP code")
+
+
+class OTPResponse(BaseModel):
+    """OTP dispatch response model."""
+
+    email: str = Field(..., description="Recipient email address")
+    otp_sent: bool = Field(default=True, description="Indicates if 2FA code was dispatched")
+    expires_in_minutes: int = Field(default=10, description="OTP validity period in minutes")
+
+
 class TokenResponse(BaseModel):
     """JWT Access and Refresh token response model."""
 
@@ -63,6 +79,7 @@ class TokenResponse(BaseModel):
     refresh_token: str = Field(..., description="JWT refresh token")
     token_type: str = Field(default="bearer", description="Authorization token type")
     expires_in: int = Field(..., description="Access token expiration in seconds")
+    user: Optional[Any] = Field(default=None, description="Authenticated user profile")
 
 
 class RefreshTokenRequest(BaseModel):
@@ -72,15 +89,19 @@ class RefreshTokenRequest(BaseModel):
 
 
 class ChangePasswordRequest(BaseModel):
-    """Change password request model."""
+    """Change password request model supporting old_password and current_password aliases."""
 
-    old_password: str = Field(..., description="Current account password")
+    old_password: Optional[str] = Field(default=None, description="Current account password")
+    current_password: Optional[str] = Field(default=None, description="Alias for current account password")
     new_password: str = Field(..., description="New password conforming to 12-char policy")
 
     @field_validator("new_password")
     @classmethod
     def check_new_password(cls, v: str) -> str:
         return validate_password_strength(v)
+
+    def get_old_password(self) -> str:
+        return self.old_password or self.current_password or ""
 
 
 class ForgotPasswordRequest(BaseModel):

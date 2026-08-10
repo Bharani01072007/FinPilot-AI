@@ -1,6 +1,6 @@
 """Authentication REST Controller Endpoints.
 
-Provides public and protected API routes for user registration, authentication, token rotation,
+Provides public and protected API routes for real-time user registration, 2FA OTP verification, token rotation,
 multi-device logout, profile management, and password recovery.
 """
 
@@ -20,6 +20,7 @@ from app.modules.identity.schemas.auth import (
     UserLoginRequest,
     UserRegisterRequest,
     UserResponse,
+    Verify2FARequest,
 )
 from app.modules.identity.services.auth_service import auth_service
 
@@ -36,17 +37,17 @@ def get_client_ip(request: Request) -> str:
 
 @router.post(
     "/register",
-    response_model=APIResponse[UserResponse],
+    response_model=APIResponse[Dict[str, Any]],
     status_code=status.HTTP_201_CREATED,
     summary="User Registration",
-    description="Register a new platform user with 12-character password policy validation and default Customer role.",
+    description="Register a new platform user with password validation, database persistence, and 2FA OTP code dispatch.",
 )
 def register(
     req: UserRegisterRequest,
     request: Request,
     db: Session = Depends(get_db),
-) -> APIResponse[UserResponse]:
-    user = auth_service.register_user(
+) -> APIResponse[Dict[str, Any]]:
+    res = auth_service.register_user(
         db=db,
         req=req,
         ip_address=get_client_ip(request),
@@ -54,8 +55,78 @@ def register(
     )
     return APIResponse(
         success=True,
-        message="User registered successfully",
-        data=UserResponse.model_validate(user),
+        message=res["message"],
+        data=res,
+    )
+
+
+@router.post(
+    "/request-otp",
+    response_model=APIResponse[Dict[str, Any]],
+    status_code=status.HTTP_200_OK,
+    summary="Request Login 2FA OTP",
+    description="Verify email & password, then dispatch 6-digit security OTP to user's email address.",
+)
+def request_otp(
+    req: UserLoginRequest,
+    request: Request,
+    db: Session = Depends(get_db),
+) -> APIResponse[Dict[str, Any]]:
+    res = auth_service.request_login_otp(
+        db=db,
+        req=req,
+        device=request.headers.get("user-agent"),
+        ip_address=get_client_ip(request),
+    )
+    return APIResponse(
+        success=True,
+        message=res["message"],
+        data=res,
+    )
+
+
+@router.post(
+    "/verify-2fa",
+    response_model=APIResponse[TokenResponse],
+    status_code=status.HTTP_200_OK,
+    summary="Verify 2FA Code & Mint Session",
+    description="Verify 6-digit OTP code against issued email session, minting JWT Access & Refresh Tokens.",
+)
+def verify_2fa(
+    req: Verify2FARequest,
+    request: Request,
+    db: Session = Depends(get_db),
+) -> APIResponse[TokenResponse]:
+    tokens = auth_service.verify_2fa_and_mint_session(
+        db=db,
+        req=req,
+        device=request.headers.get("user-agent"),
+        ip_address=get_client_ip(request),
+    )
+    return APIResponse(
+        success=True,
+        message="2FA authentication verified successfully",
+        data=tokens,
+    )
+
+
+@router.post(
+    "/resend-2fa",
+    response_model=APIResponse[Dict[str, Any]],
+    status_code=status.HTTP_200_OK,
+    summary="Resend 2FA Code",
+    description="Dispatch a new 6-digit security OTP code to registered email address.",
+)
+def resend_2fa(
+    payload: Dict[str, str],
+    db: Session = Depends(get_db),
+) -> APIResponse[Dict[str, Any]]:
+    email = payload.get("email", "")
+    res = auth_service.resend_otp(db=db, email=email)
+    return APIResponse(
+        success=True,
+        message=res["message"],
+        data=res,
     )
 
 
@@ -63,8 +134,8 @@ def register(
     "/login",
     response_model=APIResponse[TokenResponse],
     status_code=status.HTTP_200_OK,
-    summary="User Login",
-    description="Authenticate user with email and password with lockout protection, returning JWT Access and Refresh Tokens.",
+    summary="Direct User Login",
+    description="Authenticate user with email and password, returning JWT Access and Refresh Tokens.",
 )
 def login(
     req: UserLoginRequest,

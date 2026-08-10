@@ -52,10 +52,15 @@ class ForbiddenException(BaseAppException):
         super().__init__(message=message, status_code=status.HTTP_403_FORBIDDEN, details=details)
 
 
+from starlette.exceptions import HTTPException as StarletteHTTPException
+from fastapi.exceptions import RequestValidationError
+
+
 async def global_exception_handler(request: Request, exc: Exception) -> JSONResponse:
     """Global fallback exception handler catching unhandled exceptions."""
     logger.error("Unhandled Exception on %s %s: %s", request.method, request.url, str(exc), exc_info=True)
-    return JSONResponse(
+    origin = request.headers.get("origin")
+    response = JSONResponse(
         status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
         content={
             "error": "InternalServerError",
@@ -63,6 +68,10 @@ async def global_exception_handler(request: Request, exc: Exception) -> JSONResp
             "status": status.HTTP_500_INTERNAL_SERVER_ERROR,
         },
     )
+    if origin:
+        response.headers["Access-Control-Allow-Origin"] = origin
+        response.headers["Access-Control-Allow-Credentials"] = "true"
+    return response
 
 
 async def custom_app_exception_handler(request: Request, exc: BaseAppException) -> JSONResponse:
@@ -75,4 +84,62 @@ async def custom_app_exception_handler(request: Request, exc: BaseAppException) 
     }
     if exc.details:
         content["details"] = exc.details
-    return JSONResponse(status_code=exc.status_code, content=content)
+    response = JSONResponse(status_code=exc.status_code, content=content)
+    origin = request.headers.get("origin")
+    if origin:
+        response.headers["Access-Control-Allow-Origin"] = origin
+        response.headers["Access-Control-Allow-Credentials"] = "true"
+    return response
+
+
+async def http_exception_handler(request: Request, exc: StarletteHTTPException) -> JSONResponse:
+    """Exception handler for HTTP exceptions ensuring CORS headers."""
+    logger.warning("HTTP Exception on %s %s: %s", request.method, request.url, exc.detail)
+    headers = getattr(exc, "headers", None)
+    response = JSONResponse(
+        status_code=exc.status_code,
+        content={
+            "error": "HTTPException",
+            "message": exc.detail if isinstance(exc.detail, str) else str(exc.detail),
+            "status": exc.status_code,
+        },
+        headers=headers,
+    )
+    origin = request.headers.get("origin")
+    if origin:
+        response.headers["Access-Control-Allow-Origin"] = origin
+        response.headers["Access-Control-Allow-Credentials"] = "true"
+    return response
+
+
+def sanitize_error_detail(detail):
+    """Recursively convert non-JSON-serializable objects (like Exception/ValueError) in Pydantic errors into strings."""
+    if isinstance(detail, list):
+        return [sanitize_error_detail(item) for item in detail]
+    elif isinstance(detail, dict):
+        return {k: sanitize_error_detail(v) for k, v in detail.items()}
+    elif isinstance(detail, (str, int, float, bool, type(None))):
+        return detail
+    else:
+        return str(detail)
+
+
+async def validation_exception_handler(request: Request, exc: RequestValidationError) -> JSONResponse:
+    """Exception handler for validation errors ensuring CORS headers."""
+    logger.warning("Validation Error on %s %s: %s", request.method, request.url, str(exc.errors()))
+    sanitized_details = sanitize_error_detail(exc.errors())
+    response = JSONResponse(
+        status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+        content={
+            "error": "ValidationError",
+            "message": "Invalid request payload",
+            "details": sanitized_details,
+            "status": status.HTTP_422_UNPROCESSABLE_ENTITY,
+        },
+    )
+    origin = request.headers.get("origin")
+    if origin:
+        response.headers["Access-Control-Allow-Origin"] = origin
+        response.headers["Access-Control-Allow-Credentials"] = "true"
+    return response
+

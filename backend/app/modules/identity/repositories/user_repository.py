@@ -59,6 +59,13 @@ class UserRepository(BaseRepository[User, Any, Any]):
         db.add(user)
         db.commit()
 
+    def reset_failed_login(self, db: Session, user: User) -> None:
+        """Reset failed login attempts and clear lockout status for a user."""
+        user.failed_login_attempts = 0
+        user.locked_until = None
+        db.add(user)
+        db.commit()
+
     def increment_failed_login(self, db: Session, user: User) -> bool:
         """Increment failed login attempts and lock account if max threshold exceeded.
 

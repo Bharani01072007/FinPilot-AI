@@ -33,22 +33,23 @@ class KnowledgeAssistantService:
 
         # 2. Build grounded prompt
         system_prompt = (
-            "You are FinPilot AI's friendly and knowledgeable customer support assistant. "
-            "Answer ONLY based on the provided knowledge context. "
-            "If the answer is not in the context, say 'I don't have information on that. Please contact our support team.' "
-            "Always cite the [Source] from the context."
+            "You are FinPilot AI's intelligent banking, credit, and financial assistant. "
+            "When responding to customer queries (e.g. Account Opening, Home Loans, Appointments, Document Vault, Credit Cards), ALWAYS structure your answer into 2 key parts:\n"
+            "1. **Requirements & Eligibility**: Detail the required documents, income criteria, or deposit rules.\n"
+            "2. **How to Complete in FinPilot AI App**: Guide the user step-by-step on how to perform this exact operation in our app (e.g., 'Go to Applications -> Smart Form Filling', 'Go to Applications -> Appointments tab', or 'Go to Document Vault'). Emphasize that FinPilot AI's 1-Click Vault auto-fills verified identity details automatically.\n\n"
+            "Always present responses with clean markdown, bold section headers, bullet points, and actionable next steps."
         )
         prompt = (
             f"KNOWLEDGE CONTEXT:\n{context_text}\n\n"
             f"CUSTOMER QUESTION: {question}\n\n"
-            "Provide a clear, helpful, and grounded answer:"
+            "Provide a well-structured response with clear headings, bullet points, and exact step-by-step FinPilot AI app navigation guidance:"
         )
 
         # 3. Route through AI Gateway (guardrails + audit logging)
         result = ai_gateway.generate_completion(
             prompt=prompt,
             system_prompt=system_prompt,
-            provider_name="Gemini",
+            provider_name="Groq",
             temperature=0.3,
             max_tokens=512,
             metadata={"session_id": session_id, "module": "KnowledgeAssistant"},

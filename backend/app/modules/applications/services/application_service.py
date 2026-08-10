@@ -18,6 +18,7 @@ from app.modules.applications.schemas.application import (
     ApplicationAssignRequest,
     ApplicationCreateRequest,
     ApplicationListResponse,
+    ApplicationResponse,
     ApplicationSearchFilter,
     ApplicationUpdateRequest,
     DashboardSummaryResponse,
@@ -61,10 +62,11 @@ class ApplicationService:
 
     def _check_user_role_permission(self, current_user: User, allowed_roles: List[str]) -> bool:
         """Check if user has any of the specified roles."""
-        user_roles = [ur.role.name for ur in current_user.user_roles if ur.role]
-        if "Admin" in user_roles:
+        user_roles = [ur.role.name.lower() for ur in current_user.user_roles if ur.role and ur.role.name]
+        if "admin" in user_roles:
             return True
-        return any(role in user_roles for role in allowed_roles)
+        allowed_lower = [role.lower() for role in allowed_roles]
+        return any(role in user_roles for role in allowed_lower)
 
     def _enforce_employee_assignment_boundary(self, app: Application, current_user: User) -> None:
         """Verify regular Employee is assigned to the target application before modifying."""

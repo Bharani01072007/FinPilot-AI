@@ -41,9 +41,36 @@ class Settings(BaseSettings):
     POSTGRES_PASSWORD: str = "postgres_password"
     POSTGRES_DB: str = "finpilot_db"
     DATABASE_URL: Union[str, None] = None
+    DIRECT_URL: Union[str, None] = None
+
+    # SMTP Email Settings for 2FA Dispatch
+    SMTP_HOST: str = "smtp.gmail.com"
+    SMTP_PORT: int = 587
+    SMTP_USER: str = ""
+    SMTP_PASSWORD: str = ""
+    EMAILS_FROM_NAME: str = "FinPilot Security"
+    EMAILS_FROM_EMAIL: str = "noreply@finpilot.ai"
+
+    # AI Gateway API Keys & Multi-Key Load Balancing (Groq, Gemini, OpenAI, API4AI)
+    GROQ_API_KEY: str = ""
+    GROQ_API_KEY_1: str = ""
+    GROQ_API_KEY_2: str = ""
+    GROQ_API_KEY_3: str = ""
+    GROQ_API_KEY_4: str = ""
+    GEMINI_API_KEY: str = ""
+    OPENAI_API_KEY: str = ""
+    API4AI_OCR_API_KEY: str = "a4a-r2iro0hNRIUTaYEyZd13zRsiYJvwojul"
+    OCR_WEBHOOK_URL: str = "https://api.agents.snsihub.ai/webhook/1ebf3266-d339-4133-946d-5c80698b7095"
 
     # CORS Settings
-    CORS_ORIGINS: List[str] = ["http://localhost:3000", "http://localhost:8000"]
+    CORS_ORIGINS: List[str] = [
+        "http://localhost:8080",
+        "http://127.0.0.1:8080",
+        "http://localhost:3000",
+        "http://localhost:8000",
+        "http://localhost:5173",
+        "http://127.0.0.1:5173",
+    ]
 
     @field_validator("DATABASE_URL", mode="before")
     @classmethod

@@ -66,6 +66,25 @@ class NotificationRepository(BaseRepository[Notification, Any, Any]):
         db.add(notification)
         db.commit()
 
+    def mark_all_read(self, db: Session, user_id: str) -> int:
+        """Mark all unread notifications as read for a recipient user."""
+        updated = db.query(Notification).filter(
+            Notification.user_id == user_id,
+            Notification.read_status == False,
+            Notification.is_deleted == False,
+        ).update({"read_status": True, "read_at": datetime.now(timezone.utc)}, synchronize_session=False)
+        db.commit()
+        return updated
+
+    def clear_all_notifications(self, db: Session, user_id: str) -> int:
+        """Soft delete all notifications for a recipient user."""
+        updated = db.query(Notification).filter(
+            Notification.user_id == user_id,
+            Notification.is_deleted == False,
+        ).update({"is_deleted": True, "is_active": False}, synchronize_session=False)
+        db.commit()
+        return updated
+
     def search_notifications(self, db: Session, user_id: str, filters: NotificationSearchFilter) -> Tuple[List[Notification], int]:
         """Search, filter, sort, and paginate active notifications for a recipient user.
 
