@@ -1,6 +1,6 @@
 import time
 import re
-from typing import Any, Dict, Optional, List
+from typing import Any, Dict, Optional, List, Union
 from app.modules.ai.document_intelligence.ocr.webhook_ocr import webhook_ocr_provider
 from app.modules.ai.document_intelligence.pipeline.classification import classification_service
 from app.modules.ai.document_intelligence.pipeline.cleaning import text_cleaning_service
@@ -14,7 +14,7 @@ class FraudDetectionEngine:
     """Component 4 — Cross-checks information across documents & detects fraud anomalies."""
 
     @staticmethod
-    def inspect_document(raw_text: str, extracted_fields: List[Dict[str, str]], filename: str) -> Dict[str, Any]:
+    def inspect_document(raw_text: str, extracted_fields: Union[Dict[str, Any], List[Dict[str, Any]]], filename: str) -> Dict[str, Any]:
         risk_score = 0
         anomalies = []
 
@@ -25,17 +25,23 @@ class FraudDetectionEngine:
             anomalies.append("Duplicate document hash detected in PostgreSQL database.")
 
         # Cross-check 2: Aadhaar Length & Checksum Validation
-        aadhaar_field = next((f for f in extracted_fields if "aadhaar" in f.get("label", "").lower()), None)
-        if aadhaar_field:
-            raw_aadh = re.sub(r"\D", "", aadhaar_field.get("value", ""))
+        if isinstance(extracted_fields, dict):
+            raw_aadh = re.sub(r"\D", "", str(extracted_fields.get("aadhaar_number", "")))
+        else:
+            aadhaar_field = next((f for f in extracted_fields if "aadhaar" in f.get("label", "").lower()), None)
+            raw_aadh = re.sub(r"\D", "", aadhaar_field.get("value", "")) if aadhaar_field else ""
+        if raw_aadh:
             if len(raw_aadh) != 12:
                 risk_score += 40
                 anomalies.append(f"Aadhaar length mismatch: expected 12 digits, found {len(raw_aadh)} digits.")
 
         # Cross-check 3: PAN Format Rule
-        pan_field = next((f for f in extracted_fields if "pan" in f.get("label", "").lower()), None)
-        if pan_field:
-            pan_val = pan_field.get("value", "").strip().upper()
+        if isinstance(extracted_fields, dict):
+            pan_val = str(extracted_fields.get("pan_number", "")).strip().upper()
+        else:
+            pan_field = next((f for f in extracted_fields if "pan" in f.get("label", "").lower()), None)
+            pan_val = pan_field.get("value", "").strip().upper() if pan_field else ""
+        if pan_val:
             if not re.match(r"^[A-Z]{5}[0-9]{4}[A-Z]{1}$", pan_val):
                 risk_score += 45
                 anomalies.append(f"Invalid PAN Card format structure: {pan_val}")
