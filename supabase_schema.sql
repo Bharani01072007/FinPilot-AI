@@ -131,6 +131,8 @@ CREATE TABLE IF NOT EXISTS public.documents (
     version INT NOT NULL DEFAULT 1,
     is_favourite BOOLEAN DEFAULT FALSE,
     is_shared BOOLEAN DEFAULT FALSE,
+    expires_at TIMESTAMPTZ,
+    tags TEXT[] DEFAULT ARRAY[]::TEXT[],
     created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
     updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
     is_active BOOLEAN NOT NULL DEFAULT TRUE,

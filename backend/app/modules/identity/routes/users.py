@@ -29,8 +29,8 @@ router = APIRouter(prefix="/users", tags=["User Management"])
     response_model=APIResponse[UserListResponse],
     status_code=status.HTTP_200_OK,
     summary="List & Search Users",
-    description="List active users with pagination, sorting, free-text search, and role/status filtering. (Admin, Manager)",
-    dependencies=[Depends(RequireRoles("Admin", "Manager"))],
+    description="List active users with pagination, sorting, free-text search, and role/status filtering. (Admin, Manager, Employee)",
+    dependencies=[Depends(RequireRoles("Admin", "Manager", "Employee"))],
 )
 def list_users(
     search: Optional[str] = Query(None, description="Free-text search across name, email, phone"),
@@ -59,15 +59,28 @@ def list_users(
     "",
     response_model=APIResponse[UserResponse],
     status_code=status.HTTP_201_CREATED,
-    summary="Create User",
-    description="Admin operation to create a new user account with role assignment. (Admin)",
-    dependencies=[Depends(RequireRoles("Admin"))],
+    summary="Create User Account",
+    description="Create user account with role hierarchy validation. (Admin, Manager, Employee)",
+    dependencies=[Depends(RequireRoles("Admin", "Manager", "Employee"))],
 )
 def create_user(
     req: UserCreateRequest,
     current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db),
 ) -> APIResponse[UserResponse]:
+    actor_roles = [ur.role.name.lower() for ur in current_user.user_roles if ur.role and ur.role.name]
+    target_roles_lower = [r.lower() for r in req.roles]
+
+    if "admin" not in actor_roles:
+        if "manager" in actor_roles:
+            if any(r in target_roles_lower for r in ["manager", "admin"]):
+                from fastapi import HTTPException
+                raise HTTPException(status_code=403, detail="Managers can only create Employee and Customer accounts")
+        elif "employee" in actor_roles:
+            if any(r in target_roles_lower for r in ["employee", "manager", "admin"]):
+                from fastapi import HTTPException
+                raise HTTPException(status_code=403, detail="Employees can only create Customer accounts")
+
     user = user_mgmt_service.create_user_by_admin(db, req, actor_id=current_user.id)
     return APIResponse(success=True, message="User created successfully", data=UserResponse.model_validate(user))
 

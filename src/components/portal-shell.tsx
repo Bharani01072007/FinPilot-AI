@@ -43,7 +43,7 @@ import { cn } from "@/lib/utils";
 
 import { CustomerTranslator } from "@/components/customer-translator";
 
-export type Role = "customer" | "employee" | "manager";
+export type Role = "customer" | "employee" | "manager" | "admin";
 
 type NavItem = { label: string; to?: string; icon: LucideIcon; badge?: string };
 
@@ -91,7 +91,6 @@ const navs: Record<Role, { group: string; items: NavItem[] }[]> = {
       items: [
         { label: "AI Copilot", to: "/employee/assistant", icon: Bot, badge: "Copilot" },
         { label: "Risk Assessment", to: "/employee/risk", icon: ShieldAlert },
-        { label: "AI Tools & Summary", to: "/employee/ai-tools", icon: Bot },
         { label: "OCR Extractor", to: "/employee/documents?tab=ocr", icon: FileText },
         { label: "Notifications", to: "/employee/notifications", icon: Bell },
       ],
@@ -112,19 +111,37 @@ const navs: Record<Role, { group: string; items: NavItem[] }[]> = {
       items: [
         { label: "Executive AI Assistant", to: "/manager/assistant", icon: Bot, badge: "AI" },
         { label: "Risk Oversight", to: "/manager/risk", icon: ShieldAlert },
-        { label: "AI Tools & Summary", to: "/manager/ai-tools", icon: Bot },
         { label: "User & Role Mgmt", to: "/manager/users", icon: Users },
         { label: "Audit Logs", to: "/manager/audit-logs", icon: ShieldCheck },
         { label: "System Settings", to: "/manager/settings", icon: Briefcase },
       ],
     },
   ],
+  admin: [
+    {
+      group: "Administration",
+      items: [
+        { label: "Admin Control Center", to: "/admin", icon: Gauge },
+        { label: "User Provisioning", to: "/admin/users", icon: Users, badge: "RBAC" },
+        { label: "System Audit Logs", to: "/admin/audit-logs", icon: ShieldCheck },
+      ],
+    },
+    {
+      group: "System & AI",
+      items: [
+        { label: "AI Gateway Telemetry", to: "/admin/telemetry", icon: BarChart3 },
+        { label: "Executive AI Assistant", to: "/admin/assistant", icon: Bot, badge: "AI" },
+        { label: "Executive Settings", to: "/admin/settings", icon: Briefcase },
+      ],
+    },
+  ],
 };
 
 const roleMeta: Record<Role, { name: string; who: string; initials: string }> = {
-  customer: { name: "Customer Portal", who: "Bharanidharan Saravanakumar", initials: "BS" },
-  employee: { name: "Employee Portal", who: "Priya Verma · Ops", initials: "PV" },
-  manager: { name: "Manager Portal", who: "Daniel Cole · VP Ops", initials: "DC" },
+  customer: { name: "Customer Portal", who: "Deekshika S", initials: "DS" },
+  employee: { name: "Employee Portal", who: "Kaviya V · Operations", initials: "KV" },
+  manager: { name: "Manager Portal", who: "Gopinath V · Branch VP", initials: "GV" },
+  admin: { name: "Admin Portal", who: "Bharanidharan S · Admin", initials: "BS" },
 };
 
 function useTheme() {
@@ -148,11 +165,15 @@ function useTheme() {
 
 export function BrandMark({ className }: { className?: string }) {
   return (
-    <span className={cn("relative grid size-9 shrink-0 place-items-center rounded-xl bg-brand shadow-glow", className)}>
-      <svg viewBox="0 0 24 24" className="size-5" fill="none" stroke="white" strokeWidth={2.1} strokeLinecap="round">
-        <path d="M4 16.5 9 11l3.5 3.5L20 6.5" />
-        <path d="M15.5 6.5H20V11" />
-      </svg>
+    <span className={cn("relative grid size-9 shrink-0 place-items-center rounded-xl bg-brand shadow-glow overflow-hidden", className)}>
+      <img
+        src="/logo.png"
+        alt="FinPilot AI Logo"
+        className="size-full object-cover"
+        onError={(e) => {
+          (e.target as HTMLElement).style.display = "none";
+        }}
+      />
     </span>
   );
 }
@@ -190,6 +211,13 @@ export function PortalShell({
     return () => window.removeEventListener("keydown", onKey);
   }, []);
 
+  const [searchStr, setSearchStr] = useState("");
+  useEffect(() => {
+    if (typeof window !== "undefined") {
+      setSearchStr(window.location.search);
+    }
+  }, [pathname]);
+
   return (
     <div className="min-h-screen">
       <AuroraBackground />
@@ -226,7 +254,7 @@ export function PortalShell({
                 )}
                 <ul className="space-y-1">
                   {g.items.map((item) => {
-                    const currentSearch = typeof window !== "undefined" ? window.location.search : "";
+                    const currentSearch = searchStr;
                     let active = false;
                     if (item.to) {
                       const [targetPath, targetSearch] = item.to.split("?");
@@ -281,6 +309,7 @@ export function PortalShell({
           <div className="border-t border-border/60 p-3">
             <button
               onClick={() => setCollapsed((c) => !c)}
+              suppressHydrationWarning
               className="flex w-full items-center gap-3 rounded-xl px-3 py-2 text-sm text-muted-foreground transition-colors hover:bg-sidebar-accent"
             >
               {collapsed ? <PanelLeft className="size-4" /> : <PanelLeftClose className="size-4" />}
@@ -297,6 +326,7 @@ export function PortalShell({
               </div>
               <button
                 onClick={() => setPaletteOpen(true)}
+                suppressHydrationWarning
                 className="group flex h-10 flex-1 items-center gap-2 rounded-xl border border-border/70 bg-card/60 px-3 text-sm text-muted-foreground transition-colors hover:border-primary/40 md:max-w-md"
               >
                 <Search className="size-4" />
@@ -308,7 +338,7 @@ export function PortalShell({
 
               <div className="ml-auto flex items-center gap-1.5">
                 {role === "customer" && <CustomerTranslator />}
-                <Button variant="ghost" size="icon" onClick={toggle} aria-label="Toggle theme" className="rounded-xl">
+                <Button variant="ghost" size="icon" onClick={toggle} aria-label="Toggle theme" suppressHydrationWarning className="rounded-xl">
                   {dark ? <Sun className="size-4" /> : <Moon className="size-4" />}
                 </Button>
                 <div className="relative">
@@ -317,6 +347,7 @@ export function PortalShell({
                     size="icon"
                     className="rounded-xl"
                     aria-label="Notifications"
+                    suppressHydrationWarning
                     onClick={() => setNotifOpen((o) => !o)}
                   >
                     <Bell className="size-4" />
@@ -355,18 +386,49 @@ export function PortalShell({
                   </AnimatePresence>
                 </div>
                 <div className="ml-1 flex items-center gap-2 rounded-xl border border-border/70 bg-card/60 py-1 pl-1 pr-3">
-                  <span className="grid size-7 place-items-center rounded-lg bg-brand text-[11px] font-semibold text-white">
-                    {user?.first_name ? `${user.first_name[0]}${user.last_name ? user.last_name[0] : ""}`.toUpperCase() : meta.initials}
-                  </span>
-                  <span className="hidden text-xs font-medium sm:block">
-                    {user?.first_name ? `${user.first_name} ${user.last_name || ""}` : meta.who}
-                  </span>
+                  {(() => {
+                    const email = user?.email || (typeof window !== "undefined" ? JSON.parse(localStorage.getItem("finpilot_user") || "{}")?.email : "");
+                    let nameDisplay = meta.who;
+                    let initialsDisplay = meta.initials;
+
+                    if (email) {
+                      const em = email.toLowerCase().trim();
+                      if (em === "sbharanidharan2007@gmail.com" || em.includes("sbharanidharan")) {
+                        nameDisplay = "Bharanidharan S";
+                        initialsDisplay = "BS";
+                      } else if (em === "gopinath.v.official.01@gmail.com" || em.includes("gopinath")) {
+                        nameDisplay = "Gopinath V";
+                        initialsDisplay = "GV";
+                      } else if (em === "kabiyakaviya9@gmail.com" || em.includes("kabiyakaviya") || em.includes("kaviya")) {
+                        nameDisplay = "Kaviya V";
+                        initialsDisplay = "KV";
+                      } else if (em === "deekshikabil@gmail.com" || em.includes("deekshikabil") || em.includes("deekshitha")) {
+                        nameDisplay = "Deekshitha S";
+                        initialsDisplay = "DS";
+                      }
+                    } else if (user?.first_name && !user.first_name.includes("@")) {
+                      nameDisplay = `${user.first_name} ${user.last_name || ""}`.trim();
+                      initialsDisplay = `${user.first_name[0]}${user.last_name ? user.last_name[0] : ""}`.toUpperCase();
+                    }
+
+                    return (
+                      <>
+                        <span className="grid size-7 place-items-center rounded-lg bg-brand text-[11px] font-semibold text-white">
+                          {initialsDisplay}
+                        </span>
+                        <span className="hidden text-xs font-medium sm:block">
+                          {nameDisplay}
+                        </span>
+                      </>
+                    );
+                  })()}
                   {/* Logout button */}
                   <button
                     onClick={async () => {
                       await logout();
                       router.navigate({ to: "/" });
                     }}
+                    suppressHydrationWarning
                     className="ml-2 rounded-full bg-destructive/10 px-2 py-1 text-sm font-medium text-destructive hover:bg-destructive/20"
                   >
                     Logout
@@ -378,9 +440,9 @@ export function PortalShell({
 
           <motion.main
             key={pathname}
-            initial={{ opacity: 0, y: 12 }}
+            initial={{ opacity: 0, y: 6 }}
             animate={{ opacity: 1, y: 0 }}
-            transition={{ type: "spring", stiffness: 120, damping: 20 }}
+            transition={{ duration: 0.15, ease: "easeOut" }}
             className="mx-auto w-full max-w-[1720px] flex-1 px-4 py-6 sm:px-8 lg:px-10 lg:py-8"
           >
             <div className="mb-6">

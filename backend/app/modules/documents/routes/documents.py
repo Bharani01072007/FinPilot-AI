@@ -294,8 +294,9 @@ def extract_document_fields(
     current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db),
 ) -> dict:
-    """Extract structured fields from the stored document file using Groq Vision OCR."""
-    from app.modules.ai.document_intelligence.ocr.groq_vision_ocr import extract_document_fields_groq_vision
+    """Extract structured fields from the stored document file using PaddleOCR + Groq LLM + Validation + Fraud Detection."""
+    from app.modules.ai.document_intelligence.ocr.paddle_ocr import paddle_ocr_provider
+    from app.modules.ai.document_intelligence.pipeline.orchestrator import pipeline_orchestrator
 
     # 1. Load raw file bytes from storage
     try:
@@ -307,28 +308,25 @@ def extract_document_fields(
             "data": {"fields": [], "document_classification": "Unknown", "confidence": 0.0},
         }
 
-    # 2. Run Groq Vision OCR extraction
-    result = extract_document_fields_groq_vision(
+    # 2. Run 5-Component Pipeline (PaddleOCR -> Groq LLM -> Validation Engine -> Fraud Detection -> PostgreSQL)
+    pipeline_res = pipeline_orchestrator.process(
         file_bytes=file_bytes,
-        mime_type=mime_type,
         filename=filename,
+        mime_type=mime_type,
+        document_id=id,
+        actor_id=current_user.id if current_user else "system",
     )
-
-    if "error" in result:
-        return {
-            "success": False,
-            "message": f"Extraction error: {result['error']}",
-            "data": {"fields": [], "document_classification": "Unknown", "confidence": 0.0},
-        }
 
     return {
         "success": True,
-        "message": "Document fields extracted successfully via Groq Vision OCR",
+        "message": "Document fields extracted successfully via PaddleOCR + Groq LLM Pipeline",
         "data": {
-            "document_classification": result.get("document_classification", "Identity Document"),
-            "confidence": result.get("confidence", 0.99),
-            "fields": result.get("fields", []),
-            "raw_text_summary": result.get("raw_text_summary", ""),
-            "engine": "Groq Vision llama-4-scout-17b-16e-instruct",
+            "document_classification": pipeline_res.get("document_type", "Identity Document"),
+            "confidence": pipeline_res.get("overall_confidence", 0.99),
+            "fields": pipeline_res.get("extracted_fields", []),
+            "validation_results": pipeline_res.get("validation_results", {}),
+            "fraud_analysis": pipeline_res.get("fraud_analysis", {}),
+            "raw_text_summary": pipeline_res.get("cleaned_text", "")[:500],
+            "engine": "PaddleOCR v4 + Groq LLM Intelligence Engine",
         },
     }

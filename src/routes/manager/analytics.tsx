@@ -1,6 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useState, useEffect } from "react";
-import { BarChart3, Download, TrendingUp, Layers, Award, Loader2, Sparkle } from "lucide-react";
+import { BarChart3, Download, TrendingUp, Layers, Award, Loader2, Sparkle, FileSpreadsheet, FileText, Calendar, Filter } from "lucide-react";
 import {
   ResponsiveContainer,
   AreaChart,
@@ -14,7 +14,7 @@ import {
 } from "recharts";
 import { PortalShell } from "@/components/portal-shell";
 import { Button } from "@/components/ui/button";
-import { reportService } from "@/lib/services/report-service";
+import { reportService, ExportFormat } from "@/lib/services/report-service";
 import { toast } from "sonner";
 
 const revenueSeries = [
@@ -44,41 +44,120 @@ export const Route = createFileRoute("/manager/analytics")({
 function ManagerAnalyticsPage() {
   const [kpis, setKpis] = useState<any>(null);
   const [exporting, setExporting] = useState(false);
+  const [reportCategory, setReportCategory] = useState("Branch Analytics");
+  const [exportFormat, setExportFormat] = useState<ExportFormat>("json");
+  const [startDate, setStartDate] = useState("2026-01-01");
+  const [endDate, setEndDate] = useState("2026-08-06");
 
   useEffect(() => {
+    toast.dismiss();
     reportService.getKPIs().then((data) => setKpis(data));
   }, []);
 
-  const handleExport = async (type: string) => {
+  const handleExport = async (formatOverride?: ExportFormat) => {
+    const fmt = formatOverride || exportFormat;
     setExporting(true);
+    const toastId = toast.loading(`Generating ${reportCategory} report (${fmt.toUpperCase()})...`);
     try {
-      await reportService.exportReport(type);
-      toast.success(`Report dataset exported (${type}.json)`);
+      await reportService.exportReport(reportCategory, {
+        format: fmt,
+        branchName: "FinPilot AI Head Office (Krishnagiri Main)",
+        generatedBy: "Bharanidharan Saravanakumar (Branch Manager)",
+        dateRange: { startDate, endDate },
+      });
+      toast.success(`${reportCategory} exported successfully!`, { id: toastId });
     } catch {
-      toast.error("Report export failed");
+      toast.error(`Failed to export ${reportCategory}`, { id: toastId });
     } finally {
       setExporting(false);
+      setTimeout(() => {
+        toast.dismiss(toastId);
+      }, 1000);
     }
   };
 
   return (
     <PortalShell role="manager" title="Reporting & Business Analytics" subtitle="Interactive disbursement performance, AI document processing throughput, and SLA compliance metrics.">
       <div className="space-y-6">
-        {/* Top Control Bar */}
-        <div className="flex flex-wrap items-center justify-between gap-4">
-          <div className="flex items-center gap-2">
-            <span className="inline-flex items-center gap-1 rounded-full bg-primary/10 px-3 py-1 text-xs font-semibold text-primary">
-              <Sparkle className="size-3.5" /> AI Operational Metrics
-            </span>
+        {/* Top Control Bar with Full Export Panel */}
+        <div className="glass-strong rounded-3xl p-5 space-y-4">
+          <div className="flex flex-wrap items-center justify-between gap-4">
+            <div className="flex items-center gap-2">
+              <span className="inline-flex items-center gap-1 rounded-full bg-primary/10 px-3 py-1 text-xs font-semibold text-primary">
+                <Sparkle className="size-3.5" /> Live Operational Intelligence Engine
+              </span>
+            </div>
+
+            {/* Direct Quick Exports */}
+            <div className="flex flex-wrap items-center gap-2">
+              <Button size="sm" variant="outline" onClick={() => handleExport("json")} disabled={exporting} className="rounded-xl">
+                <Download className="size-3.5 mr-1" /> JSON
+              </Button>
+              <Button size="sm" variant="outline" onClick={() => handleExport("csv")} disabled={exporting} className="rounded-xl">
+                <FileSpreadsheet className="size-3.5 mr-1" /> CSV
+              </Button>
+              <Button size="sm" variant="outline" onClick={() => handleExport("xlsx")} disabled={exporting} className="rounded-xl text-success border-success/30 hover:bg-success/10">
+                <FileSpreadsheet className="size-3.5 mr-1" /> Excel (.xlsx)
+              </Button>
+              <Button size="sm" onClick={() => handleExport("pdf")} disabled={exporting} className="rounded-xl bg-brand text-white shadow-glow">
+                <FileText className="size-3.5 mr-1" /> PDF Report
+              </Button>
+            </div>
           </div>
 
-          <div className="flex items-center gap-2">
-            <Button size="sm" variant="outline" onClick={() => handleExport("applications")} disabled={exporting} className="rounded-xl">
-              <Download className="size-3.5 mr-1" /> Export Applications JSON
-            </Button>
-            <Button size="sm" onClick={() => handleExport("dashboard")} disabled={exporting} className="rounded-xl bg-brand text-white shadow-glow">
-              <Download className="size-3.5 mr-1" /> Export Executive Dataset
-            </Button>
+          {/* Export Parameters Control Panel */}
+          <div className="grid gap-3 pt-2 sm:grid-cols-2 lg:grid-cols-4">
+            <div className="space-y-1">
+              <label className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wider">Report Category</label>
+              <select
+                value={reportCategory}
+                onChange={(e) => setReportCategory(e.target.value)}
+                className="w-full h-9 rounded-xl border border-border bg-background px-3 text-xs font-medium focus:outline-none focus:ring-2 focus:ring-primary"
+              >
+                <option value="Branch Analytics">Branch Analytics</option>
+                <option value="Employee Performance Reports">Employee Performance Reports</option>
+                <option value="Customer Service Reports">Customer Service Reports</option>
+                <option value="Workflow Reports">Workflow Reports</option>
+                <option value="Risk Assessment Reports">Risk Assessment Reports</option>
+                <option value="Compliance Reports">Compliance Reports</option>
+                <option value="AI Performance Reports">AI Performance Reports</option>
+                <option value="Operational KPIs">Operational KPIs</option>
+              </select>
+            </div>
+
+            <div className="space-y-1">
+              <label className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wider">Export Format</label>
+              <select
+                value={exportFormat}
+                onChange={(e) => setExportFormat(e.target.value as ExportFormat)}
+                className="w-full h-9 rounded-xl border border-border bg-background px-3 text-xs font-medium focus:outline-none focus:ring-2 focus:ring-primary"
+              >
+                <option value="json">JSON Dataset</option>
+                <option value="csv">CSV Spreadsheet</option>
+                <option value="xlsx">Microsoft Excel (.xlsx)</option>
+                <option value="pdf">PDF Document Report</option>
+              </select>
+            </div>
+
+            <div className="space-y-1">
+              <label className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wider">Start Date</label>
+              <input
+                type="date"
+                value={startDate}
+                onChange={(e) => setStartDate(e.target.value)}
+                className="w-full h-9 rounded-xl border border-border bg-background px-3 text-xs font-medium focus:outline-none focus:ring-2 focus:ring-primary"
+              />
+            </div>
+
+            <div className="space-y-1">
+              <label className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wider">End Date</label>
+              <input
+                type="date"
+                value={endDate}
+                onChange={(e) => setEndDate(e.target.value)}
+                className="w-full h-9 rounded-xl border border-border bg-background px-3 text-xs font-medium focus:outline-none focus:ring-2 focus:ring-primary"
+              />
+            </div>
           </div>
         </div>
 

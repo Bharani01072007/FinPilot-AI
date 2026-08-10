@@ -18,6 +18,15 @@ const SUPABASE_ANON_KEY =
   import.meta.env.VITE_SUPABASE_ANON_KEY ||
   "sb_publishable_WgLDUEnuqO6wHWb3nZVXcw_Xtp7dnFB";
 
+export const isSupabaseAvailable = (): boolean => {
+  const url = import.meta.env.VITE_SUPABASE_URL || "https://WgLDUEnuqO6wHWb3nZVXcw.supabase.co";
+  return Boolean(
+    url &&
+    !url.toLowerCase().includes("wglduenuqo6whwb3nzvxcw") &&
+    url.startsWith("http")
+  );
+};
+
 export const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
   auth: {
     persistSession: true,

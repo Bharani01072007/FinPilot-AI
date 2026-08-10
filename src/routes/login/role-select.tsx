@@ -22,7 +22,7 @@ export const Route = createFileRoute("/login/role-select")({
   component: RoleSelectPage,
 });
 
-export function RoleSelectPage() {
+function RoleSelectPage() {
   const roles = [
     {
       id: "customer",
@@ -84,6 +84,26 @@ export function RoleSelectPage() {
       ],
       badge: "Executive",
     },
+    {
+      id: "admin",
+      roleType: "admin" as const,
+      title: "System Administrator",
+      tagline: "Platform Governance & Telemetry",
+      description: "Provision Manager & Employee accounts, inspect chained audit logs, and monitor server health telemetry.",
+      icon: Shield,
+      targetPath: "/login/admin",
+      colorGradient: "from-amber-600/30 via-orange-500/20 to-yellow-500/10",
+      borderColor: "hover:border-amber-500/60 hover:shadow-[0_0_35px_rgba(245,158,11,0.3)]",
+      badgeColor: "bg-amber-500/15 text-amber-600 dark:text-amber-400 border-amber-500/30",
+      btnGradient: "bg-gradient-to-r from-amber-600 to-orange-600 text-white shadow-glow",
+      features: [
+        "Manager & Employee Provisioning",
+        "Global User Directory & Role Control",
+        "SHA-256 Audit Log Inspection",
+        "API Gateway & Server Telemetry",
+      ],
+      badge: "Administrator",
+    },
   ];
 
   return (
@@ -119,7 +139,7 @@ export function RoleSelectPage() {
         initial={{ opacity: 0, y: 24 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.6, delay: 0.15 }}
-        className="grid w-full max-w-6xl gap-8 md:grid-cols-3"
+        className="grid w-full max-w-7xl gap-6 sm:grid-cols-2 lg:grid-cols-4"
       >
         {roles.map((role) => {
           const Icon = role.icon;
@@ -176,16 +196,18 @@ export function RoleSelectPage() {
                   <ChevronRight className="size-4 opacity-80 group-hover:translate-x-1 transition-transform" />
                 </Link>
 
-                <Link
-                  to={role.targetPath}
-                  search={{ mode: "signup" }}
-                  className="w-full h-10 rounded-xl border border-border/80 text-foreground bg-card/60 hover:bg-accent text-xs font-semibold flex items-center justify-between px-4 transition-all"
-                >
-                  <span className="flex items-center gap-2">
-                    <UserPlus className="size-4 text-primary" /> Create Account
-                  </span>
-                  <ArrowRight className="size-3.5 text-muted-foreground" />
-                </Link>
+                {role.id === "customer" && (
+                  <Link
+                    to={role.targetPath}
+                    search={{ mode: "signup" }}
+                    className="w-full h-10 rounded-xl border border-border/80 text-foreground bg-card/60 hover:bg-accent text-xs font-semibold flex items-center justify-between px-4 transition-all"
+                  >
+                    <span className="flex items-center gap-2">
+                      <UserPlus className="size-4 text-primary" /> Create Account
+                    </span>
+                    <ArrowRight className="size-3.5 text-muted-foreground" />
+                  </Link>
+                )}
               </div>
             </Card>
           );

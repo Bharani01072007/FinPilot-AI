@@ -104,7 +104,9 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
         rel: "stylesheet",
         href: appCss,
       },
+      { rel: "icon", href: "/favicon.png", type: "image/png" },
       { rel: "icon", href: "/favicon.ico", type: "image/x-icon" },
+      { rel: "apple-touch-icon", href: "/apple-touch-icon.png" },
     ],
   }),
   shellComponent: RootShell,
@@ -129,9 +131,14 @@ function RootShell({ children }: { children: ReactNode }) {
 
 import { AuthProvider } from "@/lib/auth-context";
 import { Toaster } from "sonner";
+import { demoSimulationEngine } from "@/lib/demo-simulation-engine";
 
 function RootComponent() {
   const { queryClient } = Route.useRouteContext();
+
+  useEffect(() => {
+    demoSimulationEngine.start();
+  }, []);
 
   return (
     <QueryClientProvider client={queryClient}>

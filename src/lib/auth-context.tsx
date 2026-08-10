@@ -53,6 +53,19 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       setIsLoading(false);
       return;
     }
+
+    // Fast-path: immediately restore cached local user
+    try {
+      const storedUserRaw = localStorage.getItem("finpilot_user");
+      if (storedUserRaw) {
+        const parsed = JSON.parse(storedUserRaw);
+        if (parsed && parsed.email) {
+          setUser(parsed);
+          setIsLoading(false);
+        }
+      }
+    } catch {}
+
     const currentToken = localStorage.getItem("finpilot_access_token");
     if (!currentToken) {
       setIsLoading(false);
@@ -63,32 +76,16 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       const res = await fetchApi<UserProfile>("/auth/me");
       if (res.success && res.data) {
         setUser(res.data);
+        localStorage.setItem("finpilot_user", JSON.stringify(res.data));
         if (res.data.roles && res.data.roles.length > 0) {
           const roleName = res.data.roles[0].name.toLowerCase() as UserRole;
           if (roleName && ["customer", "employee", "manager", "admin"].includes(roleName)) {
-            setRole(roleName === "admin" ? "manager" : roleName);
+            setRole(roleName);
           }
         }
-      } else {
-        // Fallback default user for offline / mock testing
-        setUser({
-          id: "usr-demo-01",
-          email: "aarav@finpilot.ai",
-          first_name: "Aarav",
-          last_name: "Mehta",
-          is_active: true,
-          roles: [{ id: "r1", name: "Customer" }],
-        });
       }
     } catch {
-      setUser({
-        id: "usr-demo-01",
-        email: "aarav@finpilot.ai",
-        first_name: "Aarav",
-        last_name: "Mehta",
-        is_active: true,
-        roles: [{ id: "r1", name: "Customer" }],
-      });
+      // Retain offline/local user state without logging out
     } finally {
       setIsLoading(false);
     }

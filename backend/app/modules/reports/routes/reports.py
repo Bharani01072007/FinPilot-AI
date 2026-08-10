@@ -34,8 +34,8 @@ router = APIRouter(prefix="/reports", tags=["Reporting & Analytics"])
     response_model=APIResponse[ExecutiveDashboardResponse],
     status_code=status.HTTP_200_OK,
     summary="Get Executive Dashboard Metrics",
-    description="Retrieve executive dashboard summary metrics including application totals, status breakdowns, and type distributions. (Manager, Admin)",
-    dependencies=[Depends(RequireRoles("Manager", "Admin"))],
+    description="Retrieve executive dashboard summary metrics including application totals, status breakdowns, and type distributions. (Manager, Admin, Employee)",
+    dependencies=[Depends(RequireRoles("Manager", "Admin", "Employee"))],
 )
 def get_dashboard(
     date_from: Optional[datetime] = Query(None, description="Starting date range"),
@@ -138,8 +138,8 @@ def get_audit_analytics(
     response_model=APIResponse[KPISummaryResponse],
     status_code=status.HTTP_200_OK,
     summary="Get Operational KPI Summary",
-    description="Retrieve operational Key Performance Indicators (KPIs) including average approval time, verification time, completion rate %, and employee productivity index. (Manager, Admin)",
-    dependencies=[Depends(RequireRoles("Manager", "Admin"))],
+    description="Retrieve operational Key Performance Indicators (KPIs) including average approval time, verification time, completion rate %, and employee productivity index. (Manager, Admin, Employee)",
+    dependencies=[Depends(RequireRoles("Manager", "Admin", "Employee"))],
 )
 def get_kpis(
     current_user: User = Depends(get_current_user),

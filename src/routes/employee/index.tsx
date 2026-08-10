@@ -42,10 +42,12 @@ const statusLabel: Record<string, string> = {
   COMPLETED: "Completed",
 };
 
-function formatAmount(amount: number): string {
-  if (amount >= 10000000) return `₹${(amount / 10000000).toFixed(1)}Cr`;
-  if (amount >= 100000) return `₹${(amount / 100000).toFixed(0)}L`;
-  return `₹${amount.toLocaleString("en-IN")}`;
+function formatAmount(amount?: number | null): string {
+  if (amount == null || isNaN(Number(amount))) return "₹0";
+  const num = Number(amount);
+  if (num >= 10000000) return `₹${(num / 10000000).toFixed(1)}Cr`;
+  if (num >= 100000) return `₹${(num / 100000).toFixed(0)}L`;
+  return `₹${num.toLocaleString("en-IN")}`;
 }
 
 function EmptyTableRow({ cols }: { cols: number }) {
@@ -163,8 +165,8 @@ function EmployeeDashboard() {
                   <SectionTitle title="AI case summary" action={<StatusPill tone="primary">{latestApp.application_number}</StatusPill>} />
                   <div className="rounded-xl bg-primary/8 p-3 text-sm leading-relaxed text-muted-foreground">
                     <Bot className="mb-1 inline size-4 text-primary" />{" "}
-                    {latestApp.application_type} for {latestApp.customer_name} — ₹{(latestApp.requested_amount / 100000).toFixed(0)}L.
-                    Risk score: <span className="font-medium text-foreground">{latestApp.risk_score ?? "—"}</span> ({latestApp.risk_level}).
+                    {latestApp.application_type} for {latestApp.customer_name} — {formatAmount(latestApp.requested_amount)}.
+                    Risk score: <span className="font-medium text-foreground">{latestApp.risk_score ?? "—"}</span> ({latestApp.risk_level ?? "Low"}).
                     {latestApp.remarks && ` ${latestApp.remarks}`}
                   </div>
                   <div className="mt-3 space-y-2">

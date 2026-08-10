@@ -65,14 +65,14 @@ function EmployeeLoginPage() {
           <div className="lg:col-span-6 glass rounded-2xl p-6 border border-border/60">
             <div className="text-center pb-4 border-b border-border/60 mb-4">
               <h3 className="font-display text-xl font-bold text-foreground">
-                {initialMode === "signup" ? "Register Employee Workspace" : "Loan Officer Sign In"}
+                Loan Officer Sign In
               </h3>
               <p className="text-xs text-muted-foreground mt-1">
-                Enter officer credentials or click quick login demo chips below
+                Enter officer credentials to access employee workspace
               </p>
             </div>
 
-            <LoginForm defaultRole="employee" initialMode={initialMode} />
+            <LoginForm defaultRole="employee" initialMode="signin" />
 
             <div className="mt-4 pt-3 border-t border-border/60 text-center">
               <Link

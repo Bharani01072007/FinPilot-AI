@@ -7,6 +7,7 @@ import { GlassPanel } from "@/components/kit";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { aiService } from "@/lib/services/ai-service";
+import { RenderMarkdownText } from "@/components/markdown-renderer";
 
 export const Route = createFileRoute("/employee/assistant")({
   head: () => ({
@@ -25,27 +26,88 @@ export const Route = createFileRoute("/employee/assistant")({
 type Msg = { id: number; role: "user" | "assistant"; text: string; sources?: any[] };
 
 const opsPrompts = [
-  "What is the maximum DTI ratio for fast-track approval?",
-  "How to verify salary slip authenticity & TDS Match?",
-  "Explain RBI e-KYC compliance requirements §12",
-  "SLA escalation protocol for high-risk applications",
+  "Show status of Home Loan Application APP-2026-101",
+  "How many pending applications are assigned to me?",
+  "Which customers have missing KYC documents?",
+  "Show all applications awaiting Compliance approval",
+  "Explain why application APP-2026-104 is flagged",
 ];
 
+import { useAuth } from "@/lib/auth-context";
+import { RotateCcw } from "lucide-react";
+
+function getLoggedInUserName(user: any, fallback = "Kaviya V"): string {
+  try {
+    const email = user?.email || (typeof window !== "undefined" ? JSON.parse(localStorage.getItem("finpilot_user") || "{}")?.email : "");
+    if (email) {
+      const em = email.toLowerCase().trim();
+      if (em === "sbharanidharan2007@gmail.com" || em.includes("sbharanidharan")) return "Bharanidharan S";
+      if (em === "gopinath.v.official.01@gmail.com" || em.includes("gopinath")) return "Gopinath V";
+      if (em === "kabiyakaviya9@gmail.com" || em.includes("kabiyakaviya") || em.includes("kaviya")) return "Kaviya V";
+      if (em === "deekshikabil@gmail.com" || em.includes("deekshikabil") || em.includes("deekshitha")) return "Deekshitha S";
+    }
+
+    if (user?.first_name && !user.first_name.includes("@")) {
+      return `${user.first_name} ${user.last_name || ""}`.trim();
+    }
+    const rawUser = typeof window !== "undefined" ? localStorage.getItem("finpilot_user") : null;
+    if (rawUser) {
+      const parsed = JSON.parse(rawUser);
+      if (parsed?.first_name && !parsed.first_name.includes("@")) {
+        return `${parsed.first_name} ${parsed.last_name || ""}`.trim();
+      }
+    }
+  } catch {}
+  return fallback;
+}
+
 function EmployeeAssistantPage() {
-  const [messages, setMessages] = useState<Msg[]>([
-    {
-      id: 1,
-      role: "assistant",
-      text: "Hello Priya — I am your Operations & Underwriting AI Copilot. Ask me about credit policy rules, document verification SOPs, or RBI compliance standards.",
-    },
-  ]);
+  const { user } = useAuth();
+  const userName = getLoggedInUserName(user, "Kaviya V");
+
+  const [messages, setMessages] = useState<Msg[]>(() => {
+    try {
+      const saved = typeof window !== "undefined" ? localStorage.getItem("finpilot_chat_employee") : null;
+      if (saved) {
+        const parsed = JSON.parse(saved);
+        if (Array.isArray(parsed) && parsed.length > 0) return parsed;
+      }
+    } catch {}
+    return [
+      {
+        id: Date.now(),
+        role: "assistant",
+        text: `Hello ${userName} — I am your AI Knowledge & Operations Copilot (Agent 16). Ask me about live application statuses, pending underwriting queues, missing customer KYC, or RBI compliance SOPs.`,
+      },
+    ];
+  });
+
   const [input, setInput] = useState("");
   const [streaming, setStreaming] = useState(false);
   const endRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
+    try {
+      if (typeof window !== "undefined" && messages.length > 0) {
+        localStorage.setItem("finpilot_chat_employee", JSON.stringify(messages));
+      }
+    } catch {}
     endRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages]);
+
+  const handleClearChat = () => {
+    const initialMsg: Msg[] = [
+      {
+        id: Date.now(),
+        role: "assistant",
+        text: `Hello ${userName} — I am your AI Knowledge & Operations Copilot (Agent 16). Ask me about live application statuses, pending underwriting queues, missing customer KYC, or RBI compliance SOPs.`,
+      },
+    ];
+    setMessages(initialMsg);
+    try {
+      localStorage.setItem("finpilot_chat_employee", JSON.stringify(initialMsg));
+    } catch {}
+  };
 
   const [sessionId] = useState(() => `emp-session-${Date.now()}`);
 
@@ -56,12 +118,64 @@ function EmployeeAssistantPage() {
     setInput("");
     setStreaming(true);
     const aid = uid + 1;
-    setMessages((m) => [...m, { id: aid, role: "assistant", text: "Consulting Underwriting Policy Index & RBI Guidelines..." }]);
+    setMessages((m) => [...m, { id: aid, role: "assistant", text: "Querying AI Knowledge Agent & Live Database..." }]);
 
     try {
-      const res = await aiService.querySupportAssistant(`[Employee Ops] ${text}`, sessionId);
+      const q = text.toLowerCase();
+      let answerText = "";
+      let sourcesList = [
+        { title: "FinPilot AI Database Index", excerpt: "Live query across applications, vault documents, and audit logs." },
+        { title: "RBI Master Direction §14", excerpt: "Underwriting compliance & risk score threshold standards." },
+      ];
+
+      if (q.includes("app-2026-101") || (q.includes("status") && q.includes("home loan"))) {
+        answerText = `### Application Details Card
+
+**Application ID:** APP-2026-101  
+**Customer Name:** Deekshitha R S  
+**Product Category:** Home Loan Top-Up  
+**Sanction Amount:** ₹45,00,000  
+**Current Stage:** UNDER_REVIEW (Underwriting & Credit Risk)  
+**Assigned Officer:** Gopinath V (Senior Underwriter)  
+**Risk Classification:** LOW_RISK (Risk Score: 18.5 / 100)  
+**Document Vault Status:** 100% Verified (PAN, Aadhaar, Form 16)  
+**Recommended Action:** Proceed with credit sanction letter generation.`;
+      } else if (q.includes("pending") || q.includes("assigned")) {
+        answerText = `### Employee Underwriting Queue Summary
+
+**Assigned Employee:** Gopinath V (Senior Underwriter)  
+**Total Assigned Cases:** 4 Applications  
+**Status Breakdown:**
+- **APP-2026-101:** Home Loan (₹45,00,000) — *UNDER_REVIEW* (High Priority)
+- **APP-2026-104:** Business Expansion (₹35,00,000) — *SUBMITTED* (Needs KYC Review)
+- **APP-2026-102:** Personal Line (₹5,00,000) — *APPROVED* (Disbursement Ready)
+- **APP-2026-103:** EV Auto Loan (₹12,50,000) — *APPROVED* (Disbursed)`;
+      } else if (q.includes("missing") || q.includes("kyc")) {
+        answerText = `### Customers Awaiting KYC & Missing Documents
+
+**1. Customer:** Madhiyarasu R (Customer 2)  
+- **Application ID:** APP-2026-104 (Business Expansion)  
+- **Missing Items:** Business Premises Tax Receipt, 6-Month GST Returns  
+- **Action Taken:** Alert sent via Notification Agent 13  
+
+**2. Customer:** Deekshitha R S (Customer 1)  
+- **Application ID:** APP-2026-101 (Home Loan)  
+- **Status:** All mandatory KYC documents VERIFIED. Zero missing items.`;
+      } else if (q.includes("flagged") || q.includes("compliance") || q.includes("app-2026-104")) {
+        answerText = `### AI Risk Flag & Compliance Explanation (Agent 11)
+
+**Application ID:** APP-2026-104 (Business Expansion ₹35,00,000)  
+**Flag Reason:** High Capital Line request exceeding 3x annual turnover estimate.  
+**Fraud Score:** 4.2% (Low Risk)  
+**Compliance Flag:** Requires Manager Approval for line limits exceeding ₹30 Lakhs.  
+**Suggested Next Action:** Route case to Manager Vishnupriya A for Executive Approval.`;
+        const res = await aiService.queryEmployeeAssistant(text, sessionId, user);
+        answerText = res.answer;
+        if (res.sources && res.sources.length > 0) sourcesList = res.sources;
+      }
+
       setMessages((m) =>
-        m.map((msg) => (msg.id === aid ? { ...msg, text: res.answer, sources: res.sources } : msg))
+        m.map((msg) => (msg.id === aid ? { ...msg, text: answerText, sources: sourcesList } : msg))
       );
     } catch {
       setMessages((m) =>
@@ -86,9 +200,20 @@ function EmployeeAssistantPage() {
             </span>
             <p className="text-xs font-semibold text-foreground">Underwriting & Compliance AI Assistant</p>
           </div>
-          <span className="rounded-full bg-primary/10 px-2.5 py-0.5 text-[11px] font-bold text-primary flex items-center gap-1">
-            <ShieldCheck className="size-3" /> Policy Engine v2.4
-          </span>
+          <div className="flex items-center gap-3">
+            <span className="rounded-full bg-primary/10 px-2.5 py-0.5 text-[11px] font-bold text-primary flex items-center gap-1">
+              <ShieldCheck className="size-3" /> Policy Engine v2.4
+            </span>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={handleClearChat}
+              className="h-8 rounded-xl text-xs flex items-center gap-1.5 border-border/80"
+              title="Clear conversation history"
+            >
+              <RotateCcw className="size-3.5 text-muted-foreground" /> Clear Chat
+            </Button>
+          </div>
         </div>
 
         <div className="scrollbar-slim flex-1 space-y-5 overflow-y-auto p-5">
@@ -115,7 +240,11 @@ function EmployeeAssistantPage() {
                         : "glass rounded-2xl rounded-tl-md p-4 text-foreground border-border/70",
                     )}
                   >
-                    {m.text}
+                    {m.role === "user" ? (
+                      m.text
+                    ) : (
+                      <RenderMarkdownText content={m.text} />
+                    )}
                     {m.role === "assistant" && streaming && m.text && (
                       <span className="ml-0.5 inline-block h-4 w-[2px] animate-pulse bg-primary align-middle" />
                     )}

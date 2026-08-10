@@ -47,18 +47,24 @@ export const Route = createFileRoute("/customer/")(({
 
 // Status label mapping for application stages
 const statusLabel: Record<string, string> = {
-  SUBMITTED: "Submitted",
+  SUBMITTED: "Submitted Online",
+  EMPLOYEE_REVIEWED: "Employee Reviewed & Dispatched",
+  SENT_TO_FIELD_OFFICER: "Field Officer Inspection Active",
+  FIELD_VERIFIED: "Field Inspection Verified",
+  UNDERWRITING: "Underwriting & Credit Risk Review",
   DOCUMENT_PENDING: "Documents Pending",
-  UNDER_REVIEW: "Under Review",
-  APPROVED: "Approved",
-  REJECTED: "Rejected",
-  COMPLETED: "Completed",
+  APPROVED: "Approved & Sanctioned",
+  REJECTED: "Declined / Action Required",
+  COMPLETED: "Completed & Disbursed",
 };
 
 const statusTone: Record<string, "info" | "success" | "warning" | "danger" | "default"> = {
   SUBMITTED: "info",
+  EMPLOYEE_REVIEWED: "info",
+  SENT_TO_FIELD_OFFICER: "warning",
+  FIELD_VERIFIED: "success",
+  UNDERWRITING: "info",
   DOCUMENT_PENDING: "warning",
-  UNDER_REVIEW: "info",
   APPROVED: "success",
   REJECTED: "danger",
   COMPLETED: "success",

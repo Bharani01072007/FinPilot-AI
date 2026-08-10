@@ -108,6 +108,24 @@ def create_app() -> FastAPI:
     except Exception as e:
         logger.warning("Auto database initialization note: %s", str(e))
 
+    # 7. Favicon & Logo Syncing
+    try:
+        import os
+        import shutil
+        logo_src = r"C:\Users\Bharanidharan\.gemini\antigravity-ide\brain\f26e8112-9d65-4abf-9c5d-212721d67a55\media__1786338972966.jpg"
+        if os.path.exists(logo_src):
+            project_root = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", ".."))
+            public_dir = os.path.join(project_root, "public")
+            assets_dir = os.path.join(project_root, "src", "assets")
+            os.makedirs(public_dir, exist_ok=True)
+            os.makedirs(assets_dir, exist_ok=True)
+            for fname in ["favicon.png", "favicon.ico", "logo.png", "apple-touch-icon.png"]:
+                shutil.copy(logo_src, os.path.join(public_dir, fname))
+            shutil.copy(logo_src, os.path.join(assets_dir, "logo.png"))
+            logger.info("FinPilot AI Favicon & Logo synchronized successfully to public/ and src/assets/")
+    except Exception as logo_err:
+        logger.warning("Favicon sync notice: %s", str(logo_err))
+
     logger.info("Application %s successfully initialized with Security Headers & Swagger JWT Bearer Auth.", settings.APP_NAME)
     return app
 

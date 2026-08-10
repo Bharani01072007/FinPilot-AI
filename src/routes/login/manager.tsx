@@ -65,14 +65,14 @@ function ManagerLoginPage() {
           <div className="lg:col-span-6 glass rounded-2xl p-6 border border-border/60">
             <div className="text-center pb-4 border-b border-border/60 mb-4">
               <h3 className="font-display text-xl font-bold text-foreground">
-                {initialMode === "signup" ? "Register Executive Account" : "Risk Manager Sign In"}
+                Risk Manager Sign In
               </h3>
               <p className="text-xs text-muted-foreground mt-1">
-                Enter manager credentials or click quick login demo chips below
+                Enter manager credentials to access executive workspace
               </p>
             </div>
 
-            <LoginForm defaultRole="manager" initialMode={initialMode} />
+            <LoginForm defaultRole="manager" initialMode="signin" />
 
             <div className="mt-4 pt-3 border-t border-border/60 text-center">
               <Link

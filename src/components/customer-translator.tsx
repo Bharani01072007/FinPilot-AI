@@ -49,10 +49,13 @@ function getActiveLanguage(): string {
 }
 
 export function CustomerTranslator() {
-  const [selectedLang, setSelectedLang] = useState<string>(getActiveLanguage());
+  const [selectedLang, setSelectedLang] = useState<string>("en");
   const [dropdownOpen, setDropdownOpen] = useState(false);
 
   useEffect(() => {
+    // Sync active language after mount to prevent hydration mismatch
+    setSelectedLang(getActiveLanguage());
+
     // Initialize Google Translate Element Callback
     (window as any).googleTranslateElementInit = () => {
       if ((window as any).google && (window as any).google.translate) {
@@ -133,6 +136,7 @@ export function CustomerTranslator() {
         onClick={() => setDropdownOpen((o) => !o)}
         className="flex h-9 items-center gap-2 rounded-xl border border-primary/30 bg-primary/10 px-3 text-xs font-semibold text-primary transition-all hover:bg-primary/20 shadow-glow notranslate"
         translate="no"
+        suppressHydrationWarning
       >
         <Globe className="size-3.5" />
         <span className="notranslate" translate="no">

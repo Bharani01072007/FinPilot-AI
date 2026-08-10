@@ -13,6 +13,12 @@ import { Route as IndexRouteImport } from './routes/index'
 import { Route as CustomerRouteImport } from './routes/customer'
 import { Route as EmployeeRouteImport } from './routes/employee'
 import { Route as ManagerRouteImport } from './routes/manager'
+import { Route as AdminIndexRouteImport } from './routes/admin/index'
+import { Route as AdminAssistantRouteImport } from './routes/admin/assistant'
+import { Route as AdminAuditLogsRouteImport } from './routes/admin/audit-logs'
+import { Route as AdminSettingsRouteImport } from './routes/admin/settings'
+import { Route as AdminTelemetryRouteImport } from './routes/admin/telemetry'
+import { Route as AdminUsersRouteImport } from './routes/admin/users'
 import { Route as CustomerIndexRouteImport } from './routes/customer/index'
 import { Route as CustomerApplicationsRouteImport } from './routes/customer/applications'
 import { Route as CustomerAssistantRouteImport } from './routes/customer/assistant'
@@ -30,6 +36,7 @@ import { Route as EmployeeKycRouteImport } from './routes/employee/kyc'
 import { Route as EmployeeNotificationsRouteImport } from './routes/employee/notifications'
 import { Route as EmployeeRiskRouteImport } from './routes/employee/risk'
 import { Route as Login2faRouteImport } from './routes/login/2fa'
+import { Route as LoginAdminRouteImport } from './routes/login/admin'
 import { Route as LoginCustomerRouteImport } from './routes/login/customer'
 import { Route as LoginEmployeeRouteImport } from './routes/login/employee'
 import { Route as LoginManagerRouteImport } from './routes/login/manager'
@@ -63,6 +70,36 @@ const EmployeeRoute = EmployeeRouteImport.update({
 const ManagerRoute = ManagerRouteImport.update({
   id: '/manager',
   path: '/manager',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AdminIndexRoute = AdminIndexRouteImport.update({
+  id: '/admin/',
+  path: '/admin/',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AdminAssistantRoute = AdminAssistantRouteImport.update({
+  id: '/admin/assistant',
+  path: '/admin/assistant',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AdminAuditLogsRoute = AdminAuditLogsRouteImport.update({
+  id: '/admin/audit-logs',
+  path: '/admin/audit-logs',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AdminSettingsRoute = AdminSettingsRouteImport.update({
+  id: '/admin/settings',
+  path: '/admin/settings',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AdminTelemetryRoute = AdminTelemetryRouteImport.update({
+  id: '/admin/telemetry',
+  path: '/admin/telemetry',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AdminUsersRoute = AdminUsersRouteImport.update({
+  id: '/admin/users',
+  path: '/admin/users',
   getParentRoute: () => rootRouteImport,
 } as any)
 const CustomerIndexRoute = CustomerIndexRouteImport.update({
@@ -150,6 +187,11 @@ const Login2faRoute = Login2faRouteImport.update({
   path: '/login/2fa',
   getParentRoute: () => rootRouteImport,
 } as any)
+const LoginAdminRoute = LoginAdminRouteImport.update({
+  id: '/login/admin',
+  path: '/login/admin',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const LoginCustomerRoute = LoginCustomerRouteImport.update({
   id: '/login/customer',
   path: '/login/customer',
@@ -226,6 +268,11 @@ export interface FileRoutesByFullPath {
   '/customer': typeof CustomerRouteWithChildren
   '/employee': typeof EmployeeRouteWithChildren
   '/manager': typeof ManagerRouteWithChildren
+  '/admin/assistant': typeof AdminAssistantRoute
+  '/admin/audit-logs': typeof AdminAuditLogsRoute
+  '/admin/settings': typeof AdminSettingsRoute
+  '/admin/telemetry': typeof AdminTelemetryRoute
+  '/admin/users': typeof AdminUsersRoute
   '/customer/applications': typeof CustomerApplicationsRoute
   '/customer/assistant': typeof CustomerAssistantRoute
   '/customer/help': typeof CustomerHelpRoute
@@ -241,6 +288,7 @@ export interface FileRoutesByFullPath {
   '/employee/notifications': typeof EmployeeNotificationsRoute
   '/employee/risk': typeof EmployeeRiskRoute
   '/login/2fa': typeof Login2faRoute
+  '/login/admin': typeof LoginAdminRoute
   '/login/customer': typeof LoginCustomerRoute
   '/login/employee': typeof LoginEmployeeRoute
   '/login/manager': typeof LoginManagerRoute
@@ -254,12 +302,18 @@ export interface FileRoutesByFullPath {
   '/manager/risk': typeof ManagerRiskRoute
   '/manager/settings': typeof ManagerSettingsRoute
   '/manager/users': typeof ManagerUsersRoute
+  '/admin/': typeof AdminIndexRoute
   '/customer/': typeof CustomerIndexRoute
   '/employee/': typeof EmployeeIndexRoute
   '/manager/': typeof ManagerIndexRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
+  '/admin/assistant': typeof AdminAssistantRoute
+  '/admin/audit-logs': typeof AdminAuditLogsRoute
+  '/admin/settings': typeof AdminSettingsRoute
+  '/admin/telemetry': typeof AdminTelemetryRoute
+  '/admin/users': typeof AdminUsersRoute
   '/customer/applications': typeof CustomerApplicationsRoute
   '/customer/assistant': typeof CustomerAssistantRoute
   '/customer/help': typeof CustomerHelpRoute
@@ -275,6 +329,7 @@ export interface FileRoutesByTo {
   '/employee/notifications': typeof EmployeeNotificationsRoute
   '/employee/risk': typeof EmployeeRiskRoute
   '/login/2fa': typeof Login2faRoute
+  '/login/admin': typeof LoginAdminRoute
   '/login/customer': typeof LoginCustomerRoute
   '/login/employee': typeof LoginEmployeeRoute
   '/login/manager': typeof LoginManagerRoute
@@ -288,6 +343,7 @@ export interface FileRoutesByTo {
   '/manager/risk': typeof ManagerRiskRoute
   '/manager/settings': typeof ManagerSettingsRoute
   '/manager/users': typeof ManagerUsersRoute
+  '/admin': typeof AdminIndexRoute
   '/customer': typeof CustomerIndexRoute
   '/employee': typeof EmployeeIndexRoute
   '/manager': typeof ManagerIndexRoute
@@ -298,6 +354,11 @@ export interface FileRoutesById {
   '/customer': typeof CustomerRouteWithChildren
   '/employee': typeof EmployeeRouteWithChildren
   '/manager': typeof ManagerRouteWithChildren
+  '/admin/assistant': typeof AdminAssistantRoute
+  '/admin/audit-logs': typeof AdminAuditLogsRoute
+  '/admin/settings': typeof AdminSettingsRoute
+  '/admin/telemetry': typeof AdminTelemetryRoute
+  '/admin/users': typeof AdminUsersRoute
   '/customer/applications': typeof CustomerApplicationsRoute
   '/customer/assistant': typeof CustomerAssistantRoute
   '/customer/help': typeof CustomerHelpRoute
@@ -313,6 +374,7 @@ export interface FileRoutesById {
   '/employee/notifications': typeof EmployeeNotificationsRoute
   '/employee/risk': typeof EmployeeRiskRoute
   '/login/2fa': typeof Login2faRoute
+  '/login/admin': typeof LoginAdminRoute
   '/login/customer': typeof LoginCustomerRoute
   '/login/employee': typeof LoginEmployeeRoute
   '/login/manager': typeof LoginManagerRoute
@@ -326,6 +388,7 @@ export interface FileRoutesById {
   '/manager/risk': typeof ManagerRiskRoute
   '/manager/settings': typeof ManagerSettingsRoute
   '/manager/users': typeof ManagerUsersRoute
+  '/admin/': typeof AdminIndexRoute
   '/customer/': typeof CustomerIndexRoute
   '/employee/': typeof EmployeeIndexRoute
   '/manager/': typeof ManagerIndexRoute
@@ -337,6 +400,11 @@ export interface FileRouteTypes {
     | '/customer'
     | '/employee'
     | '/manager'
+    | '/admin/assistant'
+    | '/admin/audit-logs'
+    | '/admin/settings'
+    | '/admin/telemetry'
+    | '/admin/users'
     | '/customer/applications'
     | '/customer/assistant'
     | '/customer/help'
@@ -352,6 +420,7 @@ export interface FileRouteTypes {
     | '/employee/notifications'
     | '/employee/risk'
     | '/login/2fa'
+    | '/login/admin'
     | '/login/customer'
     | '/login/employee'
     | '/login/manager'
@@ -365,12 +434,18 @@ export interface FileRouteTypes {
     | '/manager/risk'
     | '/manager/settings'
     | '/manager/users'
+    | '/admin/'
     | '/customer/'
     | '/employee/'
     | '/manager/'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
+    | '/admin/assistant'
+    | '/admin/audit-logs'
+    | '/admin/settings'
+    | '/admin/telemetry'
+    | '/admin/users'
     | '/customer/applications'
     | '/customer/assistant'
     | '/customer/help'
@@ -386,6 +461,7 @@ export interface FileRouteTypes {
     | '/employee/notifications'
     | '/employee/risk'
     | '/login/2fa'
+    | '/login/admin'
     | '/login/customer'
     | '/login/employee'
     | '/login/manager'
@@ -399,6 +475,7 @@ export interface FileRouteTypes {
     | '/manager/risk'
     | '/manager/settings'
     | '/manager/users'
+    | '/admin'
     | '/customer'
     | '/employee'
     | '/manager'
@@ -408,6 +485,11 @@ export interface FileRouteTypes {
     | '/customer'
     | '/employee'
     | '/manager'
+    | '/admin/assistant'
+    | '/admin/audit-logs'
+    | '/admin/settings'
+    | '/admin/telemetry'
+    | '/admin/users'
     | '/customer/applications'
     | '/customer/assistant'
     | '/customer/help'
@@ -423,6 +505,7 @@ export interface FileRouteTypes {
     | '/employee/notifications'
     | '/employee/risk'
     | '/login/2fa'
+    | '/login/admin'
     | '/login/customer'
     | '/login/employee'
     | '/login/manager'
@@ -436,6 +519,7 @@ export interface FileRouteTypes {
     | '/manager/risk'
     | '/manager/settings'
     | '/manager/users'
+    | '/admin/'
     | '/customer/'
     | '/employee/'
     | '/manager/'
@@ -446,11 +530,18 @@ export interface RootRouteChildren {
   CustomerRoute: typeof CustomerRouteWithChildren
   EmployeeRoute: typeof EmployeeRouteWithChildren
   ManagerRoute: typeof ManagerRouteWithChildren
+  AdminAssistantRoute: typeof AdminAssistantRoute
+  AdminAuditLogsRoute: typeof AdminAuditLogsRoute
+  AdminSettingsRoute: typeof AdminSettingsRoute
+  AdminTelemetryRoute: typeof AdminTelemetryRoute
+  AdminUsersRoute: typeof AdminUsersRoute
   Login2faRoute: typeof Login2faRoute
+  LoginAdminRoute: typeof LoginAdminRoute
   LoginCustomerRoute: typeof LoginCustomerRoute
   LoginEmployeeRoute: typeof LoginEmployeeRoute
   LoginManagerRoute: typeof LoginManagerRoute
   LoginRoleSelectRoute: typeof LoginRoleSelectRoute
+  AdminIndexRoute: typeof AdminIndexRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -481,6 +572,48 @@ declare module '@tanstack/react-router' {
       path: '/manager'
       fullPath: '/manager'
       preLoaderRoute: typeof ManagerRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/admin/': {
+      id: '/admin/'
+      path: '/admin'
+      fullPath: '/admin/'
+      preLoaderRoute: typeof AdminIndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/admin/assistant': {
+      id: '/admin/assistant'
+      path: '/admin/assistant'
+      fullPath: '/admin/assistant'
+      preLoaderRoute: typeof AdminAssistantRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/admin/audit-logs': {
+      id: '/admin/audit-logs'
+      path: '/admin/audit-logs'
+      fullPath: '/admin/audit-logs'
+      preLoaderRoute: typeof AdminAuditLogsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/admin/settings': {
+      id: '/admin/settings'
+      path: '/admin/settings'
+      fullPath: '/admin/settings'
+      preLoaderRoute: typeof AdminSettingsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/admin/telemetry': {
+      id: '/admin/telemetry'
+      path: '/admin/telemetry'
+      fullPath: '/admin/telemetry'
+      preLoaderRoute: typeof AdminTelemetryRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/admin/users': {
+      id: '/admin/users'
+      path: '/admin/users'
+      fullPath: '/admin/users'
+      preLoaderRoute: typeof AdminUsersRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/customer/': {
@@ -600,6 +733,13 @@ declare module '@tanstack/react-router' {
       path: '/login/2fa'
       fullPath: '/login/2fa'
       preLoaderRoute: typeof Login2faRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/login/admin': {
+      id: '/login/admin'
+      path: '/login/admin'
+      fullPath: '/login/admin'
+      preLoaderRoute: typeof LoginAdminRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/login/customer': {
@@ -789,11 +929,18 @@ const rootRouteChildren: RootRouteChildren = {
   CustomerRoute: CustomerRouteWithChildren,
   EmployeeRoute: EmployeeRouteWithChildren,
   ManagerRoute: ManagerRouteWithChildren,
+  AdminAssistantRoute: AdminAssistantRoute,
+  AdminAuditLogsRoute: AdminAuditLogsRoute,
+  AdminSettingsRoute: AdminSettingsRoute,
+  AdminTelemetryRoute: AdminTelemetryRoute,
+  AdminUsersRoute: AdminUsersRoute,
   Login2faRoute: Login2faRoute,
+  LoginAdminRoute: LoginAdminRoute,
   LoginCustomerRoute: LoginCustomerRoute,
   LoginEmployeeRoute: LoginEmployeeRoute,
   LoginManagerRoute: LoginManagerRoute,
   LoginRoleSelectRoute: LoginRoleSelectRoute,
+  AdminIndexRoute: AdminIndexRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
