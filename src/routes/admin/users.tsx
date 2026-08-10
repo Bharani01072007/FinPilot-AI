@@ -1,6 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { motion } from "motion/react";
-import { Users, UserPlus, ShieldCheck, Search, Filter, Loader2, CheckCircle2, Lock, Building2 } from "lucide-react";
+import { Users, UserPlus, ShieldCheck, Search, Filter, Loader2, CheckCircle2, Lock, Building2, Eye, EyeOff } from "lucide-react";
 import { useState, useEffect } from "react";
 import { PortalShell } from "@/components/portal-shell";
 import { GlassPanel, SectionTitle, StatusPill } from "@/components/kit";
@@ -26,6 +26,7 @@ function AdminUsersPage() {
   const [users, setUsers] = useState<UserAccountItem[]>([]);
   const [search, setSearch] = useState("");
   const [roleFilter, setRoleFilter] = useState("ALL");
+  const [showPassword, setShowPassword] = useState(false);
 
   // Create User Form State
   const [createOpen, setCreateOpen] = useState(false);
@@ -227,13 +228,23 @@ function AdminUsersPage() {
                 <div className="grid gap-4 sm:grid-cols-3 items-end">
                   <div className="space-y-1.5">
                     <Label className="text-xs font-semibold">Password *</Label>
-                    <Input
-                      type="password"
-                      value={password}
-                      onChange={(e) => setPassword(e.target.value)}
-                      className="h-10 rounded-xl bg-background/90 font-mono"
-                      required
-                    />
+                    <div className="relative">
+                      <Input
+                        type={showPassword ? "text" : "password"}
+                        value={password}
+                        onChange={(e) => setPassword(e.target.value)}
+                        className="h-10 rounded-xl bg-background/90 font-mono pr-10"
+                        required
+                      />
+                      <button
+                        type="button"
+                        onClick={() => setShowPassword((s) => !s)}
+                        className="absolute right-3 top-1/2 -translate-y-1/2 rounded-md p-1 text-muted-foreground hover:text-foreground transition-colors"
+                        title={showPassword ? "Hide password" : "Show password"}
+                      >
+                        {showPassword ? <EyeOff className="size-4 text-primary" /> : <Eye className="size-4" />}
+                      </button>
+                    </div>
                   </div>
 
                   <div className="space-y-1.5">

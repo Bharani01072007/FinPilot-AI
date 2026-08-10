@@ -108,6 +108,21 @@ def create_app() -> FastAPI:
     except Exception as e:
         logger.warning("Auto database initialization note: %s", str(e))
 
+    # 6b. User Clean-up for prajith.loganathan06
+    try:
+        from app.database.session import SessionLocal
+        from app.modules.identity.models import User
+        db_clean = SessionLocal()
+        users_to_del = db_clean.query(User).filter(User.email.ilike("%prajith.loganathan06%")).all()
+        if users_to_del:
+            for u in users_to_del:
+                db_clean.delete(u)
+            db_clean.commit()
+            logger.info("Successfully deleted %d existing record(s) for prajith.loganathan06", len(users_to_del))
+        db_clean.close()
+    except Exception as del_err:
+        logger.warning("User cleanup note: %s", str(del_err))
+
     # 7. Favicon & Logo Syncing
     try:
         import os

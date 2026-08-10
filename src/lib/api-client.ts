@@ -36,7 +36,7 @@ export async function fetchApi<T>(
 
   try {
     const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), 4000);
+    const timeoutId = setTimeout(() => controller.abort(), 12000);
     const signal = options.signal || controller.signal;
 
     const response = await fetch(url, {

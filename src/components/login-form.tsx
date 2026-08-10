@@ -4,7 +4,7 @@ import { useNavigate } from "@tanstack/react-router";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Loader2, KeyRound, Mail, Lock, User, Building, ShieldCheck, Sparkles } from "lucide-react";
+import { Loader2, KeyRound, Mail, Lock, User, Building, ShieldCheck, Sparkles, Eye, EyeOff } from "lucide-react";
 import { motion } from "motion/react";
 import { toast } from "sonner";
 import { fetchApi } from "@/lib/api-client";
@@ -14,8 +14,17 @@ interface LoginFormProps {
   initialMode?: "signin" | "signup";
 }
 
+export function sanitizeEmail(emailStr: string): string {
+  if (!emailStr) return "";
+  let clean = emailStr.trim().toLowerCase();
+  clean = clean.replace(/@g(am|ma|mai|mial)l?\.(com|in)$/i, "@gmail.com");
+  clean = clean.replace(/@yaho+\.(com|in)$/i, "@yahoo.com");
+  clean = clean.replace(/@hotmial?\.(com)$/i, "@hotmail.com");
+  return clean;
+}
+
 function getEmailRole(emailStr: string, currentRole?: UserRole): UserRole | null {
-  const clean = emailStr.trim().toLowerCase();
+  const clean = sanitizeEmail(emailStr);
   
   try {
     const rawCreated = typeof window !== "undefined" ? localStorage.getItem("finpilot_created_users") : null;
@@ -51,6 +60,7 @@ export function LoginForm({ defaultRole = "customer", initialMode = "signin" }: 
   const [company, setCompany] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [showPassword, setShowPassword] = useState(false);
 
   const { setRole } = useAuth();
   const navigate = useNavigate();
@@ -74,30 +84,32 @@ export function LoginForm({ defaultRole = "customer", initialMode = "signin" }: 
       admin: "System Administrator",
     };
 
-    const detectedRole = getEmailRole(email, defaultRole) || defaultRole;
+    const cleanEmail = sanitizeEmail(email);
+    const detectedRole = getEmailRole(cleanEmail, defaultRole) || defaultRole;
     setLoading(true);
 
-    if (authTab === "signup" && defaultRole === "customer") {
+    if (authTab === "signup") {
       const nameParts = fullName.trim().split(" ");
-      const firstName = nameParts[0] || "User";
-      const lastName = nameParts.slice(1).join(" ") || "FinPilot";
+      const firstName = nameParts[0] || "Customer";
+      const lastName = nameParts.slice(1).join(" ") || "User";
+      const targetSignupRole = detectedRole || defaultRole || "customer";
 
       try {
         const res = await fetchApi<any>("/auth/register", {
           method: "POST",
           body: JSON.stringify({
-            email,
+            email: cleanEmail,
             first_name: firstName,
             last_name: lastName,
             password,
-            role: detectedRole,
+            role: targetSignupRole,
           }),
         });
 
         if (res.success) {
-          toast.success(res.message || "Account registered! Check your email for your 6-digit 2FA code.");
-          setRole(detectedRole);
-          navigate({ to: "/login/2fa" as any, search: { email, role: detectedRole } as any });
+          toast.success(res.message || `🎉 Welcome ${firstName}! Account registered. Welcome & 2FA security code sent to ${cleanEmail}`);
+          setRole(targetSignupRole);
+          navigate({ to: "/login/2fa" as any, search: { email: cleanEmail, role: targetSignupRole } as any });
         } else {
           if (res.message?.includes("already exists")) {
             toast.info("Account already exists! Switched to Sign In.");
@@ -118,25 +130,19 @@ export function LoginForm({ defaultRole = "customer", initialMode = "signin" }: 
     try {
       const res = await fetchApi<any>("/auth/request-otp", {
         method: "POST",
-        body: JSON.stringify({ email, password }),
+        body: JSON.stringify({ email: cleanEmail, password }),
       });
 
       if (res.success) {
         const backendRole = (res.data?.role?.toLowerCase() as UserRole) || detectedRole;
-        toast.success(res.message || `2FA code dispatched! Sent to ${email}`);
+        toast.success(res.message || `2FA code dispatched via SMTP! Please check ${cleanEmail}`);
         setRole(backendRole);
-        navigate({ to: "/login/2fa" as any, search: { email, role: backendRole } as any });
+        navigate({ to: "/login/2fa" as any, search: { email: cleanEmail, role: backendRole } as any });
       } else {
-        // Local direct login bypass for demo presentation credentials
-        toast.success(`Welcome back! 2FA code sent to ${email}`);
-        setRole(detectedRole);
-        navigate({ to: "/login/2fa" as any, search: { email, role: detectedRole } as any });
+        toast.error(res.message || "Invalid email or password. Please try again.");
       }
     } catch {
-      // Local fallback for local dev mode
-      toast.success(`Welcome back! 2FA code sent to ${email}`);
-      setRole(detectedRole);
-      navigate({ to: "/login/2fa" as any, search: { email, role: detectedRole } as any });
+      toast.error("Failed to connect to authentication server. Please check backend status.");
     } finally {
       setLoading(false);
     }
@@ -253,13 +259,22 @@ export function LoginForm({ defaultRole = "customer", initialMode = "signin" }: 
             <Lock className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
             <Input
               id="password"
-              type="password"
+              type={showPassword ? "text" : "password"}
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               placeholder={authTab === "signup" ? "Min 12 chars (Upper, lower, num, symbol)" : "••••••••••••"}
-              className="h-10 rounded-xl pl-9 bg-background/80 text-foreground border-border/80 focus:ring-primary"
+              className="h-10 rounded-xl pl-9 pr-10 bg-background/80 text-foreground border-border/80 focus:ring-primary"
               required
             />
+            <button
+              type="button"
+              onClick={() => setShowPassword((s) => !s)}
+              className="absolute right-3 top-1/2 -translate-y-1/2 rounded-md p-1 text-muted-foreground hover:text-foreground transition-colors"
+              title={showPassword ? "Hide password" : "Show password"}
+              suppressHydrationWarning
+            >
+              {showPassword ? <EyeOff className="size-4 text-primary" /> : <Eye className="size-4" />}
+            </button>
           </div>
           {authTab === "signup" && (
             <p className="text-[11px] text-muted-foreground">

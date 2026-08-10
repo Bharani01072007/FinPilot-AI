@@ -19,6 +19,7 @@ import {
   LayoutDashboard,
   LifeBuoy,
   Mail,
+  Menu,
   Moon,
   PanelLeftClose,
   PanelLeft,
@@ -28,6 +29,7 @@ import {
   Sun,
   Users,
   Vault,
+  X,
 } from "lucide-react";
 import {
   CommandDialog,
@@ -192,6 +194,7 @@ export function PortalShell({
   const [collapsed, setCollapsed] = useState(false);
   const [paletteOpen, setPaletteOpen] = useState(false);
   const [notifOpen, setNotifOpen] = useState(false);
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const { dark, toggle } = useTheme();
   const pathname = useRouterState({ select: (s) => s.location.pathname });
   const meta = roleMeta[role];
@@ -222,6 +225,7 @@ export function PortalShell({
     <div className="min-h-screen">
       <AuroraBackground />
       <div className="flex min-h-screen">
+        {/* Desktop Sidebar */}
         <motion.aside
           animate={{ width: collapsed ? 76 : 264 }}
           transition={{ type: "spring", stiffness: 220, damping: 26 }}
@@ -318,11 +322,123 @@ export function PortalShell({
           </div>
         </motion.aside>
 
+        {/* Mobile Overlay Navigation Drawer */}
+        <AnimatePresence>
+          {mobileMenuOpen && (
+            <>
+              <motion.div
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                exit={{ opacity: 0 }}
+                onClick={() => setMobileMenuOpen(false)}
+                className="fixed inset-0 z-40 bg-background/80 backdrop-blur-md lg:hidden"
+              />
+
+              <motion.aside
+                initial={{ x: "-100%" }}
+                animate={{ x: 0 }}
+                exit={{ x: "-100%" }}
+                transition={{ type: "spring", stiffness: 300, damping: 30 }}
+                className="fixed inset-y-0 left-0 z-50 flex w-[280px] max-w-[85vw] flex-col border-r border-border/80 bg-sidebar/95 backdrop-blur-2xl p-4 shadow-float lg:hidden"
+              >
+                <div className="flex items-center justify-between pb-4 border-b border-border/60">
+                  <Link to={`/${role}`} onClick={() => setMobileMenuOpen(false)} className="flex items-center gap-3">
+                    <BrandMark />
+                    <div>
+                      <p className="font-display text-sm font-semibold text-foreground">FinPilot AI</p>
+                      <p className="text-[11px] text-muted-foreground">{meta.name}</p>
+                    </div>
+                  </Link>
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    onClick={() => setMobileMenuOpen(false)}
+                    className="rounded-xl"
+                  >
+                    <X className="size-5" />
+                  </Button>
+                </div>
+
+                <nav className="scrollbar-slim flex-1 space-y-5 overflow-y-auto pt-4">
+                  {groups.map((g) => (
+                    <div key={g.group}>
+                      <p className="px-3 pb-2 text-[10px] font-semibold uppercase tracking-widest text-muted-foreground/80">
+                        {g.group}
+                      </p>
+                      <ul className="space-y-1">
+                        {g.items.map((item) => {
+                          const currentSearch = searchStr;
+                          let active = false;
+                          if (item.to) {
+                            const [targetPath, targetSearch] = item.to.split("?");
+                            if (targetSearch) {
+                              active = pathname === targetPath && currentSearch.includes(targetSearch);
+                            } else {
+                              active = pathname === item.to && (!currentSearch || currentSearch === "?tab=all");
+                            }
+                          }
+                          const inner = (
+                            <>
+                              <item.icon className={cn("size-4 shrink-0", active && "text-primary")} />
+                              <span className="truncate">{item.label}</span>
+                              {item.badge && (
+                                <span className="ml-auto rounded-full bg-primary/12 px-2 py-0.5 text-[10px] font-semibold text-primary">
+                                  {item.badge}
+                                </span>
+                              )}
+                            </>
+                          );
+                          const cls = cn(
+                            "relative flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-sm text-sidebar-foreground/85 transition-colors hover:bg-sidebar-accent hover:text-sidebar-accent-foreground",
+                            active && "font-medium text-primary bg-primary/10 ring-1 ring-primary/20",
+                          );
+                          return (
+                            <li key={item.label}>
+                              {item.to ? (
+                                <Link
+                                  to={item.to}
+                                  className={cls}
+                                  onClick={() => setMobileMenuOpen(false)}
+                                >
+                                  {inner}
+                                </Link>
+                              ) : (
+                                <button
+                                  type="button"
+                                  className={cls}
+                                  onClick={() => setMobileMenuOpen(false)}
+                                >
+                                  {inner}
+                                </button>
+                              )}
+                            </li>
+                          );
+                        })}
+                      </ul>
+                    </div>
+                  ))}
+                </nav>
+              </motion.aside>
+            </>
+          )}
+        </AnimatePresence>
+
         <div className="flex min-w-0 flex-1 flex-col">
           <header className="sticky top-0 z-30 border-b border-border/60 bg-background/70 backdrop-blur-xl">
-            <div className="flex items-center gap-3 px-4 py-3 sm:px-6">
-              <div className="lg:hidden">
-                <BrandMark className="size-8" />
+            <div className="flex items-center gap-2.5 px-3 py-3 sm:px-6">
+              {/* Mobile Menu Trigger & Logo */}
+              <div className="flex items-center gap-2 lg:hidden">
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  onClick={() => setMobileMenuOpen((v) => !v)}
+                  className="rounded-xl border border-border/60 bg-card/60 shrink-0 size-9"
+                  aria-label="Toggle mobile menu"
+                  suppressHydrationWarning
+                >
+                  {mobileMenuOpen ? <X className="size-5" /> : <Menu className="size-5" />}
+                </Button>
+                <BrandMark className="size-8 shrink-0" />
               </div>
               <button
                 onClick={() => setPaletteOpen(true)}
@@ -387,28 +503,44 @@ export function PortalShell({
                 </div>
                 <div className="ml-1 flex items-center gap-2 rounded-xl border border-border/70 bg-card/60 py-1 pl-1 pr-3">
                   {(() => {
-                    const email = user?.email || (typeof window !== "undefined" ? JSON.parse(localStorage.getItem("finpilot_user") || "{}")?.email : "");
-                    let nameDisplay = meta.who;
-                    let initialsDisplay = meta.initials;
+                    let nameDisplay = "";
+                    let initialsDisplay = "";
 
-                    if (email) {
-                      const em = email.toLowerCase().trim();
-                      if (em === "sbharanidharan2007@gmail.com" || em.includes("sbharanidharan")) {
+                    const rawUser = user || (typeof window !== "undefined" ? JSON.parse(localStorage.getItem("finpilot_user") || "{}") : null);
+
+                    if (rawUser?.full_name && !rawUser.full_name.includes("@")) {
+                      nameDisplay = rawUser.full_name;
+                    } else if (rawUser?.first_name && !rawUser.first_name.includes("@")) {
+                      nameDisplay = `${rawUser.first_name} ${rawUser.last_name || ""}`.trim();
+                    }
+
+                    const email = (rawUser?.email || "").toLowerCase().trim();
+                    if (!nameDisplay && email) {
+                      if (email.includes("sbharanidharan") || email.includes("bharani")) {
                         nameDisplay = "Bharanidharan S";
-                        initialsDisplay = "BS";
-                      } else if (em === "gopinath.v.official.01@gmail.com" || em.includes("gopinath")) {
+                      } else if (email.includes("gopinath")) {
                         nameDisplay = "Gopinath V";
-                        initialsDisplay = "GV";
-                      } else if (em === "kabiyakaviya9@gmail.com" || em.includes("kabiyakaviya") || em.includes("kaviya")) {
+                      } else if (email.includes("kaviya") || email.includes("kabiyakaviya")) {
                         nameDisplay = "Kaviya V";
-                        initialsDisplay = "KV";
-                      } else if (em === "deekshikabil@gmail.com" || em.includes("deekshikabil") || em.includes("deekshitha")) {
-                        nameDisplay = "Deekshitha S";
-                        initialsDisplay = "DS";
+                      } else if (email.includes("deekshika") || email.includes("deekshitha")) {
+                        nameDisplay = "Deekshika S";
+                      } else {
+                        const prefix = email.split("@")[0].replace(/[0-9._]/g, " ").trim();
+                        nameDisplay = prefix ? prefix.split(" ").map((w) => w.charAt(0).toUpperCase() + w.slice(1)).join(" ") : "User";
                       }
-                    } else if (user?.first_name && !user.first_name.includes("@")) {
-                      nameDisplay = `${user.first_name} ${user.last_name || ""}`.trim();
-                      initialsDisplay = `${user.first_name[0]}${user.last_name ? user.last_name[0] : ""}`.toUpperCase();
+                    }
+
+                    if (!nameDisplay) {
+                      nameDisplay = meta.who;
+                    }
+
+                    const words = nameDisplay.split(" ").filter(Boolean);
+                    if (words.length >= 2) {
+                      initialsDisplay = `${words[0][0]}${words[1][0]}`.toUpperCase();
+                    } else if (words.length === 1) {
+                      initialsDisplay = words[0].slice(0, 2).toUpperCase();
+                    } else {
+                      initialsDisplay = meta.initials;
                     }
 
                     return (

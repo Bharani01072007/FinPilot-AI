@@ -46,10 +46,10 @@ class Settings(BaseSettings):
     # SMTP Email Settings for 2FA Dispatch
     SMTP_HOST: str = "smtp.gmail.com"
     SMTP_PORT: int = 587
-    SMTP_USER: str = ""
-    SMTP_PASSWORD: str = ""
-    EMAILS_FROM_NAME: str = "FinPilot Security"
-    EMAILS_FROM_EMAIL: str = "noreply@finpilot.ai"
+    SMTP_USER: str = "finpilotaiadmin@gmail.com"
+    SMTP_PASSWORD: str = "pwptvhursqndpbvn"
+    EMAILS_FROM_NAME: str = "FinPilot AI Security"
+    EMAILS_FROM_EMAIL: str = "finpilotaiadmin@gmail.com"
 
     # AI Gateway API Keys & Multi-Key Load Balancing (Groq, Gemini, OpenAI, API4AI)
     GROQ_API_KEY: str = ""

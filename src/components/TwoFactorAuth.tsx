@@ -7,6 +7,8 @@ import { Loader2, KeyRound } from "lucide-react";
 import { toast } from "sonner";
 import { fetchApi } from "@/lib/api-client";
 
+import { sanitizeEmail } from "@/components/login-form";
+
 interface TwoFactorAuthProps {
   role: string;
   email?: string;
@@ -27,33 +29,19 @@ export function TwoFactorAuth({ role, email = "" }: TwoFactorAuthProps) {
     }
 
     setVerifying(true);
-    const targetRole = (role || "customer").toLowerCase() as UserRole;
-    setRole(targetRole);
+    const rawEmail = email || (role === "employee" ? "kabiyakaviya9@gmail.com" : role === "manager" ? "gopinath.v.official.01@gmail.com" : role === "admin" ? "sbharanidharan2007@gmail.com" : "deekshikabil@gmail.com");
+    const targetEmail = sanitizeEmail(rawEmail);
 
-    const targetEmail = email || (role === "employee" ? "employee@finpilot.ai" : role === "manager" ? "manager@finpilot.ai" : "aarav@finpilot.ai");
-
-    // Instant verification for standard demo/test codes
-    if (["123456", "000000", "111111", "999999", "654321"].includes(targetCode)) {
-      const mockToken = "mock_jwt_token_" + Date.now();
-      if (typeof window !== "undefined") {
-        localStorage.setItem("finpilot_access_token", mockToken);
-        const namePart = targetEmail.split("@")[0] || "User";
-        const firstName = namePart.charAt(0).toUpperCase() + namePart.slice(1);
-        localStorage.setItem(
-          "finpilot_user",
-          JSON.stringify({
-            id: `usr-${Date.now()}`,
-            email: targetEmail,
-            first_name: firstName,
-            last_name: "FinPilot",
-            is_active: true,
-          })
-        );
-      }
-      toast.success(`2FA Code Verified! Opening ${targetRole.toUpperCase()} workspace...`);
-      navigate({ to: `/${targetRole}` as any });
-      setVerifying(false);
-      return;
+    const cleanEmail = targetEmail.toLowerCase().trim();
+    let detectedRole: UserRole = "customer";
+    if (cleanEmail === "sbharanidharan2007@gmail.com" || cleanEmail === "admin@finpilot.ai" || cleanEmail.includes("admin")) {
+      detectedRole = "admin";
+    } else if (cleanEmail === "gopinath.v.official.01@gmail.com" || cleanEmail === "manager@finpilot.ai" || cleanEmail.includes("manager")) {
+      detectedRole = "manager";
+    } else if (cleanEmail === "kabiyakaviya9@gmail.com" || cleanEmail === "employee@finpilot.ai" || cleanEmail.includes("employee")) {
+      detectedRole = "employee";
+    } else if (role && ["admin", "manager", "employee", "customer"].includes(role.toLowerCase())) {
+      detectedRole = role.toLowerCase() as UserRole;
     }
 
     try {
@@ -63,6 +51,7 @@ export function TwoFactorAuth({ role, email = "" }: TwoFactorAuthProps) {
       });
 
       if (res.success && res.data?.access_token) {
+        const finalRole = (res.data?.user?.role?.toLowerCase() || detectedRole) as UserRole;
         if (typeof window !== "undefined") {
           localStorage.setItem("finpilot_access_token", res.data.access_token);
           if (res.data.refresh_token) {
@@ -70,44 +59,37 @@ export function TwoFactorAuth({ role, email = "" }: TwoFactorAuthProps) {
           }
           if (res.data.user) {
             localStorage.setItem("finpilot_user", JSON.stringify(res.data.user));
+          } else {
+            localStorage.setItem(
+              "finpilot_user",
+              JSON.stringify({
+                id: "usr-admin-1",
+                email: targetEmail,
+                first_name: "Bharanidharan",
+                last_name: "S",
+                full_name: "Bharanidharan S",
+                role: finalRole,
+              })
+            );
           }
         }
+        setRole(finalRole);
         refreshUser().catch(() => {});
-        toast.success(`2FA Code Verified! Opening ${targetRole.toUpperCase()} workspace...`);
-        const targetPath = `/${targetRole}`;
-        navigate({ to: targetPath as any });
+        toast.success(`2FA Verified via SMTP Email! Opening ${finalRole.toUpperCase()} workspace...`);
+        navigate({ to: `/${finalRole}` as any });
       } else {
-        // Fallback demo authorization for custom 6-digit codes
-        const mockToken = "mock_jwt_token_" + Date.now();
-        if (typeof window !== "undefined") {
-          localStorage.setItem("finpilot_access_token", mockToken);
-          const namePart = targetEmail.split("@")[0] || "User";
-          const firstName = namePart.charAt(0).toUpperCase() + namePart.slice(1);
-          localStorage.setItem(
-            "finpilot_user",
-            JSON.stringify({
-              id: `usr-${Date.now()}`,
-              email: targetEmail,
-              first_name: firstName,
-              last_name: "FinPilot",
-              is_active: true,
-            })
-          );
-        }
-        refreshUser().catch(() => {});
-        toast.success(`2FA Code Verified! Opening ${targetRole.toUpperCase()} workspace...`);
-        const targetPath = `/${targetRole}`;
-        navigate({ to: targetPath as any });
+        toast.error(res.message || "Incorrect 2FA verification code. Please check your email inbox.");
       }
     } catch {
-      toast.error("Verification failed. Please check the 6-digit OTP code.");
+      toast.error("Verification failed. Please check the 6-digit OTP code sent to your email.");
     } finally {
       setVerifying(false);
     }
   };
 
   const handleResend = async () => {
-    const targetEmail = email || "aarav@finpilot.ai";
+    const rawEmail = email || "deekshikabil@gmail.com";
+    const targetEmail = sanitizeEmail(rawEmail);
     try {
       const res = await fetchApi<any>("/auth/resend-2fa", {
         method: "POST",
@@ -115,12 +97,12 @@ export function TwoFactorAuth({ role, email = "" }: TwoFactorAuthProps) {
       });
 
       if (res.success) {
-        toast.success(res.message || `New 6-digit security code sent to ${targetEmail}`);
+        toast.success(res.message || `New 6-digit 2FA security code dispatched via SMTP to ${targetEmail}`);
       } else {
         toast.error(res.message || "Failed to resend 2FA code.");
       }
     } catch {
-      toast.info(`A new 6-digit security code has been dispatched to ${targetEmail}`);
+      toast.error("Failed to connect to backend SMTP email server.");
     }
   };
 

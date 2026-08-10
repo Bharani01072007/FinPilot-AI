@@ -43,7 +43,19 @@ from app.modules.identity.security import (
 _ACTIVE_2FA_STORE: Dict[str, Dict[str, Any]] = {}
 
 
-from app.core.email import dispatch_2fa_email
+import re
+
+def sanitize_email(email_str: str) -> str:
+    if not email_str:
+        return ""
+    clean = email_str.strip().lower()
+    clean = re.sub(r"@g(am|ma|mai|mial)l?\.(com|in)$", "@gmail.com", clean)
+    clean = re.sub(r"@yaho+\.(com|in)$", "@yahoo.com", clean)
+    clean = re.sub(r"@hotmial?\.(com)$", "@hotmail.com", clean)
+    return clean
+
+
+from app.core.email import dispatch_2fa_email, dispatch_welcome_and_2fa_email
 
 
 class AuthService:
@@ -83,12 +95,13 @@ class AuthService:
             db.rollback()
             logger.warning("Audit log note: %s", str(err))
 
-    def _generate_and_dispatch_otp(self, email: str, user_id: str, role: str = "customer") -> str:
+    def _generate_and_dispatch_otp(self, email: str, user_id: str, role: str = "customer", user_name: Optional[str] = None) -> str:
         """Generate a random 6-digit 2FA OTP code and dispatch email notification."""
+        clean_target = sanitize_email(email)
         otp_code = f"{random.randint(100000, 999999)}"
         expires_at = datetime.now(timezone.utc) + timedelta(minutes=10)
 
-        _ACTIVE_2FA_STORE[email.lower()] = {
+        _ACTIVE_2FA_STORE[clean_target] = {
             "code": otp_code,
             "expires_at": expires_at,
             "user_id": user_id,
@@ -97,16 +110,19 @@ class AuthService:
 
         # Real-time Dispatch Log Output (ASCII safe for Windows cp1252 console)
         logger.info("=========================================================")
-        logger.info("[REALTIME 2FA DISPATCH] Destination: %s", email)
+        logger.info("[REALTIME 2FA DISPATCH] Destination: %s", clean_target)
         logger.info("[2FA SECURITY CODE]: %s (Valid for 10 minutes)", otp_code)
         logger.info("=========================================================")
         try:
-            print(f"\n[REALTIME 2FA DISPATCH] Sent 2FA OTP [{otp_code}] to {email}\n")
+            print(f"\n[REALTIME 2FA DISPATCH] Sent 2FA OTP [{otp_code}] to {clean_target}\n")
         except Exception:
             pass
 
         # Dispatch SMTP Email Async Task
-        dispatch_2fa_email(email, otp_code)
+        if user_name:
+            dispatch_welcome_and_2fa_email(clean_target, user_name, otp_code)
+        else:
+            dispatch_2fa_email(clean_target, otp_code)
 
         return otp_code
 
@@ -117,8 +133,8 @@ class AuthService:
         ip_address: Optional[str] = None,
         user_agent: Optional[str] = None,
     ) -> Dict[str, Any]:
-        """Register a new platform user with specified role and dispatch 2FA security OTP."""
-        email_clean = req.email.lower()
+        """Register a new platform user with specified role and dispatch Welcome & 2FA security OTP."""
+        email_clean = sanitize_email(req.email)
         if self.user_repo.get_by_email(db, email_clean):
             raise BaseAppException(message="User with this email already exists", status_code=400)
 
@@ -159,7 +175,8 @@ class AuthService:
             db, action="User Registration", user_id=user.id, ip_address=ip_address, user_agent=user_agent
         )
 
-        otp_code = self._generate_and_dispatch_otp(email_clean, user.id, req.role or "customer")
+        full_user_name = f"{user.first_name} {user.last_name or ''}".strip()
+        otp_code = self._generate_and_dispatch_otp(email_clean, user.id, req.role or "customer", user_name=full_user_name)
 
         return {
             "user_id": user.id,

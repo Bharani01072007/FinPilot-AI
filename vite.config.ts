@@ -6,8 +6,9 @@ import { defineConfig } from "@lovable.dev/vite-tanstack-config";
 try {
   const logoSrc = "C:\\Users\\Bharanidharan\\.gemini\\antigravity-ide\\brain\\f26e8112-9d65-4abf-9c5d-212721d67a55\\media__1786338972966.jpg";
   if (fs.existsSync(logoSrc)) {
-    const publicDir = path.resolve(__dirname, "public");
-    const assetsDir = path.resolve(__dirname, "src/assets");
+    const rootDir = typeof import.meta.dirname !== "undefined" ? import.meta.dirname : path.resolve(".");
+    const publicDir = path.resolve(rootDir, "public");
+    const assetsDir = path.resolve(rootDir, "src/assets");
     if (!fs.existsSync(publicDir)) fs.mkdirSync(publicDir, { recursive: true });
     if (!fs.existsSync(assetsDir)) fs.mkdirSync(assetsDir, { recursive: true });
 
