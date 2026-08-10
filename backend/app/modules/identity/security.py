@@ -7,6 +7,7 @@ and JWT access & refresh token claims processing.
 import hashlib
 import uuid
 from datetime import datetime, timedelta, timezone
+from typing import Any, Dict, List, Optional
 import bcrypt
 if not hasattr(bcrypt, "__about__"):
     try:
