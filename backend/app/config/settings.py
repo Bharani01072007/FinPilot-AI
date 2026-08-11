@@ -43,8 +43,8 @@ class Settings(BaseSettings):
     DATABASE_URL: Union[str, None] = None
     DIRECT_URL: Union[str, None] = None
 
-    # SMTP Email Settings for 2FA Dispatch (Set to False to disable real email dispatch)
-    ENABLE_SMTP: bool = False
+    # SMTP Email Settings for 2FA Dispatch (Set to True for real Gmail SMTP email dispatch)
+    ENABLE_SMTP: bool = True
     SMTP_HOST: str = "smtp.gmail.com"
     SMTP_PORT: int = 587
     SMTP_USER: str = "finpilotaiadmin@gmail.com"
