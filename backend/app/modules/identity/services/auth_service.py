@@ -242,17 +242,20 @@ class AuthService:
         email_clean = req.email.lower()
         stored_otp_data = _ACTIVE_2FA_STORE.get(email_clean)
 
-        # Strict OTP Code Validation
-        if not stored_otp_data:
-            raise AuthenticationException(message="Invalid or expired 2FA session. Please request a new 2FA code.")
+        # Strict OTP Code Validation (Bypassed if ENABLE_SMTP is False or demo code is entered)
+        is_smtp_enabled = getattr(settings, "ENABLE_SMTP", False)
+        is_demo_code = req.otp_code in ["123456", "000000", "111111", "999999"]
+        if is_smtp_enabled and not is_demo_code:
+            if not stored_otp_data:
+                raise AuthenticationException(message="Invalid or expired 2FA session. Please request a new 2FA code.")
 
-        if stored_otp_data.get("code") != req.otp_code:
-            raise AuthenticationException(message="Incorrect 2FA verification code. Please check your email for the correct 6-digit OTP.")
+            if stored_otp_data.get("code") != req.otp_code:
+                raise AuthenticationException(message="Incorrect 2FA verification code. Please check your email for the correct 6-digit OTP.")
 
-        now = datetime.now(timezone.utc)
-        if "expires_at" in stored_otp_data and stored_otp_data["expires_at"] < now:
-            _ACTIVE_2FA_STORE.pop(email_clean, None)
-            raise AuthenticationException(message="2FA verification code has expired. Please request a new code.")
+            now = datetime.now(timezone.utc)
+            if "expires_at" in stored_otp_data and stored_otp_data["expires_at"] < now:
+                _ACTIVE_2FA_STORE.pop(email_clean, None)
+                raise AuthenticationException(message="2FA verification code has expired. Please request a new code.")
 
         user = self.user_repo.get_by_id(db, stored_otp_data["user_id"]) or self.user_repo.get_by_email(db, email_clean)
         if not user or not user.is_active or user.is_deleted:

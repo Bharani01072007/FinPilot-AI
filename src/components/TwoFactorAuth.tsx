@@ -75,7 +75,7 @@ export function TwoFactorAuth({ role, email = "" }: TwoFactorAuthProps) {
         }
         setRole(finalRole);
         refreshUser().catch(() => {});
-        toast.success(`2FA Verified via SMTP Email! Opening ${finalRole.toUpperCase()} workspace...`);
+        toast.success(`2FA Verified! Opening ${finalRole.toUpperCase()} workspace...`);
         navigate({ to: `/${finalRole}` as any });
       } else {
         toast.error(res.message || "Incorrect 2FA verification code. Please check your email inbox.");

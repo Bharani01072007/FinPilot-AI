@@ -17,8 +17,8 @@ def _send_email_task(recipient: str, otp_code: str):
     smtp_port = int(settings.SMTP_PORT or os.getenv("SMTP_PORT", 587))
     from_name = settings.EMAILS_FROM_NAME or "FinPilot AI Security"
 
-    if not smtp_user or not smtp_pass:
-        logger.info("[SMTP SIMULATION] Real SMTP credentials not configured. Code [%s] for %s logged.", otp_code, recipient)
+    if not getattr(settings, "ENABLE_SMTP", False) or not smtp_user or not smtp_pass:
+        logger.info("[SMTP DISABLED] Email dispatch bypassed. 2FA Security Code [%s] for %s logged.", otp_code, recipient)
         return
 
     msg = MIMEMultipart("alternative")
@@ -111,8 +111,8 @@ def _send_welcome_and_2fa_email_task(recipient: str, user_name: str, otp_code: s
     smtp_port = int(settings.SMTP_PORT or os.getenv("SMTP_PORT", 587))
     from_name = settings.EMAILS_FROM_NAME or "FinPilot AI Security"
 
-    if not smtp_user or not smtp_pass:
-        logger.info("[SMTP SIMULATION] Real SMTP credentials not configured. Welcome Code [%s] for %s logged.", otp_code, recipient)
+    if not getattr(settings, "ENABLE_SMTP", False) or not smtp_user or not smtp_pass:
+        logger.info("[SMTP DISABLED] Welcome email dispatch bypassed. Code [%s] for %s logged.", otp_code, recipient)
         return
 
     msg = MIMEMultipart("alternative")
