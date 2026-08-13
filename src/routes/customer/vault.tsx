@@ -212,11 +212,105 @@ function VaultPage() {
     }).catch(() => setDbLoading(false));
   }, []);
 
+function normalizeExtractedFields(input: any): Array<{ label: string; value: string }> {
+  if (!input) return [];
+
+  const formatLabel = (str: string): string => {
+    if (!str) return "Field";
+    return str
+      .replace(/[_-]/g, " ")
+      .replace(/([a-z])([A-Z])/g, "$1 $2")
+      .split(" ")
+      .map((w) => w.charAt(0).toUpperCase() + w.slice(1).toLowerCase())
+      .join(" ");
+  };
+
+  if (Array.isArray(input)) {
+    const result: Array<{ label: string; value: string }> = [];
+    input.forEach((item, idx) => {
+      if (!item) return;
+      if (typeof item === "string") {
+        if (item.includes(":")) {
+          const [k, ...v] = item.split(":");
+          result.push({ label: formatLabel(k), value: v.join(":").trim() });
+        } else {
+          result.push({ label: `Field ${idx + 1}`, value: item });
+        }
+      } else if (typeof item === "object") {
+        const labelStr = item.label || item.name || item.field_name;
+        if (labelStr && item.value !== undefined) {
+          const valStr = typeof item.value === "object" ? JSON.stringify(item.value) : String(item.value);
+          result.push({ label: formatLabel(String(labelStr)), value: valStr });
+        } else {
+          Object.entries(item).forEach(([k, v]) => {
+            if (v !== undefined && v !== null && k !== "id" && k !== "rawFile" && k !== "ADDED_DOCUMENTS" && k !== "MISSING_DOCUMENTS" && k !== "ISSUES") {
+              if (typeof v === "string" && (v.includes(":") || v.includes("\n"))) {
+                const subRes = normalizeExtractedFields(v);
+                if (subRes.length > 0) {
+                  result.push(...subRes);
+                  return;
+                }
+              }
+              const valStr = typeof v === "object" ? (Array.isArray(v) ? v.join(", ") : JSON.stringify(v)) : String(v);
+              result.push({ label: formatLabel(k), value: valStr });
+            }
+          });
+        }
+      }
+    });
+    if (result.length > 0) return result;
+  }
+
+  if (typeof input === "string") {
+    if (input.trim().startsWith("{") || input.trim().startsWith("[")) {
+      try {
+        const parsed = JSON.parse(input);
+        return normalizeExtractedFields(parsed);
+      } catch {}
+    }
+    const lines = input.split("\n").filter((l) => l.trim().length > 0);
+    const result: Array<{ label: string; value: string }> = [];
+    lines.forEach((line) => {
+      if (line.includes(":")) {
+        const [k, ...v] = line.split(":");
+        result.push({ label: formatLabel(k), value: v.join(":").trim() });
+      } else if (line.includes("=")) {
+        const [k, ...v] = line.split("=");
+        result.push({ label: formatLabel(k), value: v.join("=").trim() });
+      }
+    });
+    if (result.length > 0) return result;
+  }
+
+  if (typeof input === "object") {
+    const result: Array<{ label: string; value: string }> = [];
+    Object.entries(input).forEach(([k, v]) => {
+      if (v !== undefined && v !== null && k !== "id" && k !== "rawFile" && k !== "ADDED_DOCUMENTS" && k !== "MISSING_DOCUMENTS" && k !== "ISSUES") {
+        if (typeof v === "string" && (v.includes(":") || v.includes("\n"))) {
+          const subRes = normalizeExtractedFields(v);
+          if (subRes.length > 0) {
+            result.push(...subRes);
+            return;
+          }
+        }
+        const valStr = typeof v === "object" ? (Array.isArray(v) ? v.join(", ") : JSON.stringify(v)) : String(v);
+        result.push({ label: formatLabel(k), value: valStr });
+      }
+    });
+    if (result.length > 0) return result;
+  }
+
+  return [];
+}
+
   const getItemExtractedFields = (doc: VaultDoc) => {
-    if (editedFieldsMap[doc.id]) return editedFieldsMap[doc.id];
-    if (liveOcrMap[doc.id]) return liveOcrMap[doc.id].fields;
-    if (doc.extracted && doc.extracted.length > 0) return doc.extracted;
-    return getExtractedFields(doc);
+    let fieldsRaw: any = null;
+    if (editedFieldsMap[doc.id]) fieldsRaw = editedFieldsMap[doc.id];
+    else if (liveOcrMap[doc.id]) fieldsRaw = liveOcrMap[doc.id].fields || liveOcrMap[doc.id].extracted_fields || liveOcrMap[doc.id];
+    else if (doc.extracted && doc.extracted.length > 0) fieldsRaw = doc.extracted;
+    else fieldsRaw = getExtractedFields(doc);
+
+    return normalizeExtractedFields(fieldsRaw);
   };
 
   const openDocument = useCallback(async (doc: VaultDoc) => {
