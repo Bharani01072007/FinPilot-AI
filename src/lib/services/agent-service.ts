@@ -51,10 +51,21 @@ export const agentService = {
           extractedText = webhookData;
         }
 
+        const firstItem = Array.isArray(webhookData) ? webhookData[0] : webhookData;
+        let extractedFields =
+          firstItem?.extracted_fields ||
+          firstItem?.EXTRACTED_FIELDS ||
+          firstItem?.fields ||
+          firstItem?.json;
+
+        if (!extractedFields && typeof firstItem === "object") {
+          extractedFields = firstItem;
+        }
+
         return {
-          document_type: fileName.includes("PAN") ? "PAN Card" : fileName.includes("Aadhaar") ? "Aadhaar Card" : "Bank Statement",
+          document_type: fileName.includes("PAN") ? "PAN Card" : fileName.includes("Aadhaar") ? "Aadhaar Card" : fileName.includes("DRVLC") || fileName.includes("Driving") ? "Driving License" : "Bank Statement",
           ocr_text: extractedText || `EXTRACTED OCR TEXT FROM MISTRAL OCR AGENT FOR ${fileName}`,
-          extracted_fields: webhookData?.extracted_fields || webhookData?.fields || {
+          extracted_fields: extractedFields || {
             full_name: "Bharanidharan Saravanakumar",
             id_number: "BHARN1234K",
             dob: "01/07/2007",
